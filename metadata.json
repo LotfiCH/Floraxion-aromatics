@@ -1,0 +1,6 @@
+{
+  "name": "Floraxion Aromatics",
+  "description": "Algerian botanical ingredients brand specializing in pure essential oils, vegetable carrier oils, and hydrolats for direct retail and B2B wholesale supply.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

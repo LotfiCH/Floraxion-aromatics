@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-forest: #244a3b;
+    --color-sage: #829477;
+    --color-ivory: #f4f1e8;
+    --color-sand: #f8f7f2;
+    --color-charcoal: #292d29;
+    --color-border: #e3e5df;
+    --color-muted: #6d746e;
+  }
+
+  html {
+    font-family: 'Plus Jakarta Sans', 'Cairo', 'Noto Sans Arabic', system-ui, -apple-system, sans-serif;
+  }
+
+  html[dir="rtl"] {
+    font-family: 'Cairo', 'Noto Sans Arabic', 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+
+  .font-serif-botanical {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  html[dir="rtl"] .font-serif-botanical {
+    font-family: 'Amiri', 'Cairo', 'Noto Sans Arabic', serif;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
