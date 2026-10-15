@@ -129,6 +129,14 @@ export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelect
                   {t.footer.legalNotice}
                 </button>
               </li>
+              <li className="pt-2 border-t border-[#1C3A2E]">
+                <button
+                  onClick={() => handleNav('admin')}
+                  className="text-xs font-semibold text-[#829477] hover:text-white transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <span>🔐 {locale === 'ar' ? 'بوابة إدارة الموقع والطلبيات' : 'Accès Administration & Commandes'}</span>
+                </button>
+              </li>
             </ul>
           </div>
 
