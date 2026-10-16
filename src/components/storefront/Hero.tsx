@@ -32,11 +32,11 @@ export const Hero: React.FC<HeroProps> = ({ locale, onExplore, onRequestQuote })
               {t.hero.description}
             </p>
 
-            {/* Primary Action Buttons */}
-            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            {/* Primary Action Buttons - Perfectly Aligned */}
+            <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
               <button
                 onClick={onExplore}
-                className="px-6 py-3.5 bg-[#244A3B] hover:bg-[#1C3A2E] text-white text-xs font-semibold tracking-wider uppercase rounded-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                className="h-12 px-6 bg-[#244A3B] hover:bg-[#1C3A2E] text-white text-xs font-semibold tracking-wider uppercase rounded-xs transition-colors inline-flex items-center justify-center gap-2.5 cursor-pointer shadow-sm border border-[#244A3B]"
               >
                 <span>{t.hero.ctaShop}</span>
                 <ArrowRight className="w-4 h-4 rtl:rotate-180" />
@@ -44,7 +44,7 @@ export const Hero: React.FC<HeroProps> = ({ locale, onExplore, onRequestQuote })
 
               <button
                 onClick={onRequestQuote}
-                className="px-6 py-3.5 bg-transparent hover:bg-black/5 text-[#244A3B] border border-[#244A3B]/40 hover:border-[#244A3B] text-xs font-semibold tracking-wider uppercase rounded-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="h-12 px-6 bg-[#FAF9F5] hover:bg-white text-[#244A3B] border border-[#244A3B]/40 hover:border-[#244A3B] text-xs font-semibold tracking-wider uppercase rounded-xs transition-colors inline-flex items-center justify-center gap-2.5 cursor-pointer shadow-2xs"
               >
                 <FileText className="w-4 h-4" />
                 <span>{t.hero.ctaQuote}</span>

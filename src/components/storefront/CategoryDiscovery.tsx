@@ -46,6 +46,16 @@ export const CategoryDiscovery: React.FC<CategoryDiscoveryProps> = ({
           : 'Eaux florales aromatiques distillées au ratio 1:1, respectant la douceur des peaux délicates.',
       tag: 'rose_water',
     },
+    {
+      slug: 'olive-oils',
+      name: t.nav.oliveOils,
+      count: t.categoriesSection.oliveOilsCount,
+      desc:
+        locale === 'ar'
+          ? 'زيوت زيتون بكر ممتاز معصورة على البارد من سيق وجرجرة، ومنكّهة بنقع الأعشاب العطرية.'
+          : 'Grands crus de Sig, Djurdjura et Aurès extraits à froid, et infusions artisanales aux plantes sauvages.',
+      tag: 'olive_oil',
+    },
   ];
 
   return (
@@ -63,7 +73,7 @@ export const CategoryDiscovery: React.FC<CategoryDiscoveryProps> = ({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-6">
           {categories.map((cat) => (
             <div
               key={cat.slug}

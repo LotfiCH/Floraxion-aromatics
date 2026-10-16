@@ -73,6 +73,8 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
               ? t.nav.essentialOils
               : product.categoryId === 'vegetable-oils'
               ? t.nav.vegetableOils
+              : product.categoryId === 'olive-oils'
+              ? t.nav.oliveOils
               : t.nav.hydrolats}
           </span>
           <span aria-hidden="true">/</span>

@@ -264,7 +264,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex items-center gap-3 bg-[#FAF9F5] p-2 border border-[#E3E5DF] rounded-xs">
             <UserCheck className="w-4 h-4 text-[#244A3B]" />
             <div className="text-start">
-              <span className="text-[10px] uppercase font-mono text-[#6D746E] block">
+              <span className="text-[10px] font-semibold text-[#6D746E] block">
                 {t.admin.roleBadge} :
               </span>
               <select
@@ -386,7 +386,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="bg-white p-5 border border-[#E3E5DF] rounded-xs shadow-xs">
-                <span className="text-[11px] font-mono uppercase text-[#6D746E]">
+                <span className="text-[11px] font-medium text-[#6D746E]">
                   {t.admin.ordersCount}
                 </span>
                 <p className="font-serif-botanical text-3xl font-bold text-[#244A3B] mt-1 tabular-nums">
@@ -396,7 +396,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="bg-white p-5 border border-[#E3E5DF] rounded-xs shadow-xs">
-                <span className="text-[11px] font-mono uppercase text-[#6D746E]">
+                <span className="text-[11px] font-medium text-[#6D746E]">
                   {t.admin.pendingPayment}
                 </span>
                 <p className="font-serif-botanical text-3xl font-bold text-amber-700 mt-1 tabular-nums">
@@ -406,7 +406,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="bg-white p-5 border border-[#E3E5DF] rounded-xs shadow-xs">
-                <span className="text-[11px] font-mono uppercase text-[#6D746E]">
+                <span className="text-[11px] font-medium text-[#6D746E]">
                   {t.admin.pendingQuotes}
                 </span>
                 <p className="font-serif-botanical text-3xl font-bold text-blue-700 mt-1 tabular-nums">
@@ -416,7 +416,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="bg-white p-5 border border-[#E3E5DF] rounded-xs shadow-xs">
-                <span className="text-[11px] font-mono uppercase text-[#6D746E]">
+                <span className="text-[11px] font-medium text-[#6D746E]">
                   {t.admin.lowStockCount}
                 </span>
                 <p className="font-serif-botanical text-3xl font-bold text-emerald-800 mt-1 tabular-nums">
@@ -514,7 +514,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   onChange={(e) => setProductCatFilter(e.target.value)}
                   className="py-1.5 px-3 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs text-[#292D29] cursor-pointer"
                 >
-                  <option value="all">Toutes familles (35)</option>
+                  <option value="all">Toutes familles ({products.length})</option>
+                  <option value="olive-oils">Huiles d’Olive Vierge Extra (10)</option>
                   <option value="essential-oils">Huiles Essentielles (28)</option>
                   <option value="vegetable-oils">Huiles Végétales (5)</option>
                   <option value="hydrolats">Hydrolats (2)</option>
@@ -554,6 +555,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ? 'H. Essentielle'
                         : p.categoryId === 'vegetable-oils'
                         ? 'H. Végétale'
+                        : p.categoryId === 'olive-oils'
+                        ? 'H. d’Olive Vierge Extra'
                         : 'Hydrolat'}
                     </td>
                     <td className="py-3 px-4 text-[#292D29]">

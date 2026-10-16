@@ -23,16 +23,30 @@ import { OrderConfirmationView } from './components/checkout/OrderConfirmationVi
 import { B2BQuoteView } from './components/quote/B2BQuoteView';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AboutAndPoliciesView } from './components/storefront/AboutAndPolicies';
-import { ArrowRight, Sparkles, Building2 } from 'lucide-react';
+import { ArrowRight, Sparkles, Building2, Droplets, ShieldCheck, Award, Leaf } from 'lucide-react';
+import { getDictionary } from './lib/i18n';
 
 export default function App() {
   const [locale, setLocale] = useState<Locale>('fr');
-  const [activeView, setActiveView] = useState<string>('home');
+  const [activeView, setActiveView] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view')?.toLowerCase();
+      const pathname = window.location.pathname.toLowerCase();
+      const target = hash || viewParam || (pathname.includes('/admin') ? 'admin' : '');
+      if (['admin', 'b2b', 'shop', 'about', 'home'].includes(target)) {
+        return target;
+      }
+    }
+    return 'home';
+  });
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [quotePreselectedProduct, setQuotePreselectedProduct] = useState<Product | null>(null);
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [oliveSubFilter, setOliveSubFilter] = useState<'all' | 'crus' | 'aromatized'>('all');
 
   // Synchronized Storage State
   const [products, setProducts] = useState<Product[]>([]);
@@ -61,6 +75,39 @@ export default function App() {
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
   }, [locale]);
+
+  // URL Hash & Query routing sync (e.g. #admin, ?view=admin, #shop, #home)
+  useEffect(() => {
+    const handleLocationChange = () => {
+      if (typeof window === 'undefined') return;
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      const viewParam = params.get('view')?.toLowerCase();
+      const pathname = window.location.pathname.toLowerCase();
+
+      const target = hash || viewParam || (pathname.includes('/admin') ? 'admin' : '');
+      if (['admin', 'b2b', 'shop', 'about', 'home'].includes(target)) {
+        setActiveView(target);
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }
+    };
+
+    handleLocationChange();
+    window.addEventListener('hashchange', handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+    };
+  }, []);
+
+  const navigateToView = (view: string) => {
+    setActiveView(view);
+    if (typeof window !== 'undefined') {
+      window.location.hash = view;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
 
   // Cart operations
   const handleAddToCart = (product: Product, variant: ProductVariant, quantity: number) => {
@@ -161,7 +208,7 @@ export default function App() {
         locale={locale}
         setLocale={setLocale}
         activeView={activeView}
-        setActiveView={setActiveView}
+        setActiveView={navigateToView}
         cartCount={totalCartCount}
         openCart={() => setIsCartDrawerOpen(true)}
         selectedCategory={selectedCategory}
@@ -219,7 +266,7 @@ export default function App() {
                     }}
                     className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#244A3B] hover:underline cursor-pointer"
                   >
-                    <span>Voir l'intégralité des 35 références</span>
+                    <span>{locale === 'ar' ? 'عرض كافة الـ 45 منتجاً' : "Voir l'intégralité des 45 références"}</span>
                     <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                   </button>
                 </div>
@@ -237,6 +284,148 @@ export default function App() {
                         onQuickAdd={handleQuickAdd}
                       />
                     ))}
+                </div>
+              </div>
+            </section>
+
+            {/* DEDICATED SECTION: HUILES D’OLIVE VIERGE EXTRA & AROMATISÉES (10 PRODUITS) */}
+            <section id="olive-oils" className="py-16 sm:py-24 bg-[#F8F7F0] border-b border-[#E3E5DF] scroll-mt-20">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Section Header */}
+                <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
+                  <div className="max-w-3xl">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#EAE8D9] text-[#556B2F] text-[11px] font-mono uppercase tracking-wider rounded-xs mb-3">
+                      <Droplets className="w-3.5 h-3.5 text-[#8F9754]" />
+                      <span>{locale === 'ar' ? 'محاصيل مختارة ونقع عطري نباتي أصيل' : 'GRANDS CRUS & MACÉRATIONS BOTANIQUES DU TERROIR'}</span>
+                    </div>
+                    <h2 className="font-serif-botanical text-2xl sm:text-4xl lg:text-5xl font-bold text-[#244A3B] leading-tight">
+                      {locale === 'ar'
+                        ? 'زيوت الزيتون البكر الممتاز والمنكّهة بالأعشاب الطبيعية'
+                        : 'Huiles d’Olive Vierge Extra & Infusions Aromatisées'}
+                    </h2>
+                    <p className="text-xs sm:text-sm text-[#6D746E] mt-3 leading-relaxed">
+                      {locale === 'ar'
+                        ? 'أجود أصناف زيت الزيتون المعصورة على البارد (< 22° مئوية) من بساتين سيق العريقة، مرتفعات جرجرة، الأوراس، وسهول المتيجة. بحموضة معتمدة فائقة الانخفاض (< 0.20%)، إضافة إلى تشكيلة من الزيوت المنكّهة بنقع بطيء لأعشابنا العطرية البرية وحمضياتنا الطازجة.'
+                        : 'Grands crus mono-variétaux (Sigoise, Chemlal, Azeradj, Limli) extraits à froid (< 22°C) à très basse acidité (< 0,20%), et macérations artisanales sublimées par nos cueillettes de romarin sauvage, zaatar des coteaux, agrumes de la Mitidja, piment fumé et truffe du terroir.'}
+                    </p>
+
+                    {/* Terroir & Quality Badges */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-4 text-[11px] text-[#556B2F] font-medium">
+                      <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-xs border border-[#E3E5DF] shadow-2xs">
+                        <Award className="w-3.5 h-3.5 text-[#D4AF37]" />
+                        <span>{locale === 'ar' ? 'عصرة أولى على البارد < 22°C' : '1ère Pression à Froid < 22°C'}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-xs border border-[#E3E5DF] shadow-2xs">
+                        <ShieldCheck className="w-3.5 h-3.5 text-[#3E5C38]" />
+                        <span>{locale === 'ar' ? 'حموضة معتمدة < 0.20%' : 'Acidité Certifiée < 0,20%'}</span>
+                      </span>
+                      <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-xs border border-[#E3E5DF] shadow-2xs">
+                        <Leaf className="w-3.5 h-3.5 text-[#556B2F]" />
+                        <span>{locale === 'ar' ? 'أعشاب برية وحمضيات طازجة' : 'Infusions Botaniques Naturelles'}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Sub-Filter Tabs & CTA */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+                    <div className="inline-flex p-1 bg-white border border-[#E3E5DF] rounded-xs shadow-2xs">
+                      <button
+                        onClick={() => setOliveSubFilter('all')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors cursor-pointer ${
+                          oliveSubFilter === 'all'
+                            ? 'bg-[#244A3B] text-white'
+                            : 'text-[#6D746E] hover:text-[#244A3B]'
+                        }`}
+                      >
+                        {locale === 'ar' ? 'كافة الأصناف (10)' : 'Toutes les 10 Huiles'}
+                      </button>
+                      <button
+                        onClick={() => setOliveSubFilter('crus')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors cursor-pointer ${
+                          oliveSubFilter === 'crus'
+                            ? 'bg-[#244A3B] text-white'
+                            : 'text-[#6D746E] hover:text-[#244A3B]'
+                        }`}
+                      >
+                        {locale === 'ar' ? 'المحاصيل النقية (4)' : 'Grands Crus Purs (4)'}
+                      </button>
+                      <button
+                        onClick={() => setOliveSubFilter('aromatized')}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-xs transition-colors cursor-pointer ${
+                          oliveSubFilter === 'aromatized'
+                            ? 'bg-[#244A3B] text-white'
+                            : 'text-[#6D746E] hover:text-[#244A3B]'
+                        }`}
+                      >
+                        {locale === 'ar' ? 'المنكّهة بالأعشاب (6)' : 'Aromatisées (6)'}
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        setSelectedCategory('olive-oils');
+                        setActiveView('shop');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#244A3B] hover:text-[#1C3A2E] underline underline-offset-4 cursor-pointer"
+                    >
+                      <span>{locale === 'ar' ? 'عرض الكتالوج الكامل' : 'Voir tout dans le catalogue'}</span>
+                      <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* 10 Products Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-7">
+                  {products
+                    .filter((p) => p.categoryId === 'olive-oils' && p.status === 'published')
+                    .filter((p) => {
+                      if (oliveSubFilter === 'crus') return !p.slug.includes('aromatisee');
+                      if (oliveSubFilter === 'aromatized') return p.slug.includes('aromatisee');
+                      return true;
+                    })
+                    .map((prod) => (
+                      <ProductCard
+                        key={prod.id}
+                        product={prod}
+                        locale={locale}
+                        onSelect={handleSelectProduct}
+                        onQuickAdd={handleQuickAdd}
+                      />
+                    ))}
+                </div>
+
+                {/* Wholesale / Bulk Prompt */}
+                <div className="mt-12 p-6 bg-white border border-[#E3E5DF] rounded-xs shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xs bg-[#F4F1E8] flex items-center justify-center text-[#244A3B] shrink-0 border border-[#E3E5DF]">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-[#244A3B]">
+                        {locale === 'ar'
+                          ? 'طلبيات الجملة والتوريد للمطاعم والفنادق والموزعين'
+                          : 'Approvisionnement Gastronomique & Professionnel'}
+                      </h4>
+                      <p className="text-xs text-[#6D746E] mt-0.5">
+                        {locale === 'ar'
+                          ? 'تتوفر عبوات احترافية سعة 5 لتر، 25 لتر وبراميل للمطاعم الفاخرة وشركات التغذية مع شهادات التحليل المخبري.'
+                          : 'Conditionnements professionnels en bidons 5 L, fûts 25 L à 200 L avec certificats d’analyse par lot et tarifs dégressifs.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setQuotePreselectedProduct(null);
+                      setActiveView('b2b');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="px-5 py-2.5 bg-[#244A3B] hover:bg-[#1C3A2E] text-white text-xs font-semibold rounded-xs transition-colors cursor-pointer shrink-0 inline-flex items-center gap-2 shadow-2xs"
+                  >
+                    <span>{locale === 'ar' ? 'طلب تسعيرة كميات' : 'Demander un Devis Vrac'}</span>
+                    <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
+                  </button>
                 </div>
               </div>
             </section>
@@ -267,7 +456,7 @@ export default function App() {
                       className="px-6 py-3.5 bg-white text-[#244A3B] hover:bg-[#F4F1E8] text-xs font-semibold uppercase tracking-wider rounded-xs transition-colors cursor-pointer inline-flex items-center gap-2 shadow-md"
                     >
                       <Building2 className="w-4 h-4" />
-                      <span>Demander une Cotation B2B</span>
+                      <span>{locale === 'ar' ? 'طلب تسعيرة للمهنيين' : 'Demander un Devis Professionnel'}</span>
                     </button>
                   </div>
                 </div>
@@ -389,7 +578,7 @@ export default function App() {
       {/* Global Footer */}
       <Footer
         locale={locale}
-        setActiveView={setActiveView}
+        setActiveView={navigateToView}
         setSelectedCategory={setSelectedCategory}
       />
     </div>

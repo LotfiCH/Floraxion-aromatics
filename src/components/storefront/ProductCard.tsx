@@ -73,6 +73,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 ? locale === 'ar' ? 'زيت أساسي' : 'Huile Essentielle'
                 : product.categoryId === 'vegetable-oils'
                 ? locale === 'ar' ? 'زيت نباتي' : 'Huile Végétale'
+                : product.categoryId === 'olive-oils'
+                ? locale === 'ar' ? 'زيت زيتون بكر ممتاز' : 'Huile d’Olive Vierge Extra'
                 : locale === 'ar' ? 'مقطر زهري' : 'Hydrolat'}
             </span>
             <span aria-hidden="true">·</span>

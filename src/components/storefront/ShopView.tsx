@@ -94,20 +94,27 @@ export const ShopView: React.FC<ShopViewProps> = ({
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <span className="text-xs uppercase font-mono tracking-wider text-[#829477] font-medium">
-                CATALOGUE FLORAXION · 35 RÉFÉRENCES
+                CATALOGUE FLORAXION · 45 RÉFÉRENCES
               </span>
               <h1 className="font-serif-botanical text-3xl sm:text-4xl font-bold text-[#244A3B] mt-1">
                 {selectedCategory === 'essential-oils'
                   ? t.nav.essentialOils
                   : selectedCategory === 'vegetable-oils'
                   ? t.nav.vegetableOils
+                  : selectedCategory === 'olive-oils'
+                  ? t.nav.oliveOils
                   : selectedCategory === 'hydrolats'
                   ? t.nav.hydrolats
-                  : t.catalog.title}
+                  : t.nav.shop}
               </h1>
+              <p className="text-xs sm:text-sm text-[#6D746E] mt-1">
+                {locale === 'ar'
+                  ? 'مجموعة متكاملة تجمع الزيوت الأساسية، وزيوت الزيتون البكر الممتاز والمنكّهة، والزيوت النباتية، والمقطرات في نافذة واحدة موحدة.'
+                  : 'Une collection unique réunissant nos 28 huiles essentielles, 10 huiles d’olive extra vierges & aromatisées, 5 huiles végétales et 2 hydrolats botaniques.'}
+              </p>
             </div>
 
-            <div className="text-xs text-[#6D746E] font-medium tabular-nums">
+            <div className="text-xs text-[#6D746E] font-medium tabular-nums shrink-0">
               {filteredProducts.length} {t.catalog.showingCount}
             </div>
           </div>
@@ -115,77 +122,86 @@ export const ShopView: React.FC<ShopViewProps> = ({
 
         {/* Filter & Search Toolbar */}
         <div className="bg-white p-4 sm:p-5 rounded-xs border border-[#E3E5DF] shadow-xs mb-8 space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-            {/* Search Input */}
-            <div className="lg:col-span-5 relative">
-              <Search className="w-4 h-4 text-[#829477] absolute start-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t.catalog.searchPlaceholder}
-                className="w-full ps-9 pe-4 py-2.5 bg-[#FAF9F5] border border-[#E3E5DF] focus:border-[#244A3B] focus:outline-none rounded-xs text-xs text-[#292D29] transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-[#6D746E] hover:text-[#292D29]"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-
-            {/* Category Segmented Control */}
-            <div className="lg:col-span-5 flex flex-wrap gap-1.5">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5">
+            {/* Category Segmented Control - Single Clean Line */}
+            <div className="flex flex-wrap sm:flex-nowrap gap-1.5 items-center overflow-x-auto pb-1 sm:pb-0">
               <button
                 onClick={() => onSelectCategory(null)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-xs transition-colors cursor-pointer ${
+                className={`h-9 px-3.5 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 border ${
                   selectedCategory === null
-                    ? 'bg-[#244A3B] text-white'
-                    : 'bg-[#FAF9F5] text-[#292D29] hover:bg-[#EAE7DC]'
+                    ? 'bg-[#244A3B] text-white border-[#244A3B]'
+                    : 'bg-[#FAF9F5] text-[#292D29] border-[#E3E5DF] hover:bg-[#EAE7DC]'
                 }`}
               >
-                {t.catalog.allCategories}
+                {t.catalog.allCategories} (45)
+              </button>
+              <button
+                onClick={() => onSelectCategory('olive-oils')}
+                className={`h-9 px-3.5 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 border ${
+                  selectedCategory === 'olive-oils'
+                    ? 'bg-[#244A3B] text-white border-[#244A3B]'
+                    : 'bg-[#FAF9F5] text-[#292D29] border-[#E3E5DF] hover:bg-[#EAE7DC]'
+                }`}
+              >
+                {t.nav.oliveOils}
               </button>
               <button
                 onClick={() => onSelectCategory('essential-oils')}
-                className={`px-3 py-1.5 text-xs font-medium rounded-xs transition-colors cursor-pointer ${
+                className={`h-9 px-3.5 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 border ${
                   selectedCategory === 'essential-oils'
-                    ? 'bg-[#244A3B] text-white'
-                    : 'bg-[#FAF9F5] text-[#292D29] hover:bg-[#EAE7DC]'
+                    ? 'bg-[#244A3B] text-white border-[#244A3B]'
+                    : 'bg-[#FAF9F5] text-[#292D29] border-[#E3E5DF] hover:bg-[#EAE7DC]'
                 }`}
               >
-                {t.nav.essentialOils} (28)
+                {t.nav.essentialOils}
               </button>
               <button
                 onClick={() => onSelectCategory('vegetable-oils')}
-                className={`px-3 py-1.5 text-xs font-medium rounded-xs transition-colors cursor-pointer ${
+                className={`h-9 px-3.5 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 border ${
                   selectedCategory === 'vegetable-oils'
-                    ? 'bg-[#244A3B] text-white'
-                    : 'bg-[#FAF9F5] text-[#292D29] hover:bg-[#EAE7DC]'
+                    ? 'bg-[#244A3B] text-white border-[#244A3B]'
+                    : 'bg-[#FAF9F5] text-[#292D29] border-[#E3E5DF] hover:bg-[#EAE7DC]'
                 }`}
               >
-                {t.nav.vegetableOils} (5)
+                {t.nav.vegetableOils}
               </button>
               <button
                 onClick={() => onSelectCategory('hydrolats')}
-                className={`px-3 py-1.5 text-xs font-medium rounded-xs transition-colors cursor-pointer ${
+                className={`h-9 px-3.5 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 border ${
                   selectedCategory === 'hydrolats'
-                    ? 'bg-[#244A3B] text-white'
-                    : 'bg-[#FAF9F5] text-[#292D29] hover:bg-[#EAE7DC]'
+                    ? 'bg-[#244A3B] text-white border-[#244A3B]'
+                    : 'bg-[#FAF9F5] text-[#292D29] border-[#E3E5DF] hover:bg-[#EAE7DC]'
                 }`}
               >
-                {t.nav.hydrolats} (2)
+                {t.nav.hydrolats}
               </button>
             </div>
 
-            {/* Sort Dropdown */}
-            <div className="lg:col-span-2">
+            {/* Search Input and Sort Dropdown */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-4 h-4 text-[#829477] absolute start-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t.catalog.searchPlaceholder}
+                  className="w-full h-9 ps-9 pe-7 bg-[#FAF9F5] border border-[#E3E5DF] focus:border-[#244A3B] focus:outline-none rounded-xs text-xs text-[#292D29] transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute end-2.5 top-1/2 -translate-y-1/2 text-xs text-[#6D746E] hover:text-[#292D29] cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full py-2.5 px-3 bg-[#FAF9F5] border border-[#E3E5DF] focus:border-[#244A3B] rounded-xs text-xs text-[#292D29] cursor-pointer"
+                className="h-9 px-3 bg-[#FAF9F5] border border-[#E3E5DF] focus:border-[#244A3B] rounded-xs text-xs text-[#292D29] cursor-pointer shrink-0"
               >
                 <option value="default">{t.catalog.sortDefault}</option>
                 <option value="price-asc">{t.catalog.sortPriceAsc}</option>
@@ -231,7 +247,7 @@ export const ShopView: React.FC<ShopViewProps> = ({
               {t.catalog.noResults}
             </p>
             <p className="text-xs text-[#6D746E] max-w-md mx-auto mb-6">
-              Essayez d’ajuster vos termes de recherche ou sélectionnez une autre catégorie parmi les 35 références disponibles.
+              Essayez d’ajuster vos termes de recherche ou sélectionnez une autre catégorie parmi les 45 références disponibles.
             </p>
             <button
               onClick={resetAll}

@@ -1,4 +1,4 @@
-import { Category, Product } from '../types';
+import type { Category, Product } from '../types/index.ts';
 
 export const CATEGORIES: Category[] = [
   {
@@ -46,6 +46,22 @@ export const CATEGORIES: Category[] = [
       ar: {
         name: 'مياه الأزهار والمقطرات',
         description: 'مياه مقطرة عطرية نقية يتم جمعها أثناء التقطير بالبخار للأزهار والنباتات العطرية.',
+      },
+    },
+  },
+  {
+    id: 'cat-olive-oils',
+    slug: 'olive-oils',
+    sortOrder: 4,
+    isActive: true,
+    translations: {
+      fr: {
+        name: 'Huiles d’Olive Vierge Extra & Aromatisées',
+        description: 'Grands crus d’huiles d’olive extra vierges de terroirs d’Algérie (Sig, Kabylie, Aurès) et macérations aromatiques artisanales aux herbes sauvages.',
+      },
+      ar: {
+        name: 'زيوت الزيتون البكر الممتاز والمنكّهة',
+        description: 'أجود أصناف زيت الزيتون البكر الممتاز المعصورة على البارد من أخصب مزارع الجزائر وزيوت زيتون منكهة بالأعشاب الطبيعية.',
       },
     },
   },
@@ -1197,5 +1213,440 @@ export const INITIAL_PRODUCTS: Product[] = [
     documents: [],
     createdAt: '2025-01-16T12:00:00Z',
     updatedAt: '2025-02-01T14:00:00Z',
+  },
+
+  // --- 10 HUILES D’OLIVE VIERGE EXTRA & AROMATISÉES DU TERROIR ---
+  {
+    id: 'prod-ol-01',
+    sku: 'FLX-OL-001',
+    slug: 'huile-olive-extra-vierge-sig-mascara',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: true,
+    botanicalName: 'Olea europaea L. var. Sigoise',
+    origin: 'Coteaux & Plaines de Sig, Mascara, Algérie',
+    extractionMethod: {
+      fr: 'Première extraction mécanique à froid (< 22°C) en flux continu sous 6 heures après récolte manuelle.',
+      ar: 'عصرة أولى ميكانيكية على البارد تحت 22° مئوية خلال 6 ساعات من الجني اليدوي للثمار.',
+    },
+    specifications: {
+      appearance: { fr: 'Robe vert doré limpide et brillante', ar: 'لون ذهبي مائل للأخضر مع لمعان صافٍ' },
+      aromaProfile: { fr: 'Fruité vert intense, artichaut cru, feuille de tomate froissée, ardence poivrée noble et équilibrée.', ar: 'نكهة ثمار خضراء غنية، طعم الخرشوف وأوراق الطماطم مع حدة فلفلية معتدلة متوازنة.' },
+      density: '0.914 - 0.918',
+    },
+    storageInstructions: {
+      fr: 'Conserver en bouteille foncée hermétiquement fermée, à l’abri de la chaleur et de la lumière directe.',
+      ar: 'يحفظ في عبوات زجاجية معتمة محكمة الإغلاق، بعيداً عن الحرارة وأشعة الشمس المباشرة.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Vierge Extra Grand Cru de Sig',
+        shortDescription: 'Fruité vert d’exception, première pression à froid des oliveraies séculaires de Sig (Mascara).',
+        description: 'La Sigoise est réputée pour sa richesse aromatique et son équilibre organoleptique parfait. Récoltée en tout début de maturité pour capturer une concentration maximale en polyphénols antioxydants. Taux d’acidité certifié inférieur à 0,18%.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز - محصول سيق المتميز (معسكر)',
+        shortDescription: 'عصرة أولى على البارد بثمار خضراء ممتازة من بساتين سيق العريقة بولاية معسكر.',
+        description: 'يشتهر صنف السيكواز بنكهته العطرية الغنية وتوازنه الفائق. تُجنى الثمار يدوياً مع بواكير النضج للحفاظ على أعلى تركيز من البوليفينولات ومضادات الأكسدة الطبيعية، مع نسبة حموضة فائقة الانخفاض أقل من 0.18%.',
+      },
+    },
+    imageTag: 'olive_oil',
+    variants: [
+      { id: 'var-ol-01-250', productId: 'prod-ol-01', sku: 'FLX-OL-001-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1400, stockQuantity: 120, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-01-500', productId: 'prod-ol-01', sku: 'FLX-OL-001-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 2500, stockQuantity: 85, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-01-750', productId: 'prod-ol-01', sku: 'FLX-OL-001-750ML', sizeValue: 750, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre prestige 750 ml avec bec verseur', ar: 'قارورة زجاجية فاخرة 750 مل مع فوهة سكب' }, priceDZD: 3600, stockQuantity: 60, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-01-5l', productId: 'prod-ol-01', sku: 'FLX-OL-001-5L', sizeValue: 5, sizeUnit: 'L', packagingLabel: { fr: 'Bidon métallique alimentaire gastronomique 5 Litres', ar: 'عبوة معدنية غذائية احترافية 5 لتر' }, priceDZD: 19500, stockQuantity: 30, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [
+      { id: 'doc-ol-01', title: { fr: 'Certificat d’Analyse Physico-Chimique (Acidité & Indice Peroxyde)', ar: 'شهادة التحليل الفيزيوكيميائي ونسبة الحموضة' }, documentType: 'coa', fileName: 'COA_Huile_Olive_Sig_2025.pdf', fileSize: '190 KB', isPublic: true },
+    ],
+    createdAt: '2025-01-20T08:00:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-02',
+    sku: 'FLX-OL-002',
+    slug: 'huile-olive-extra-vierge-djurdjura-kabylie',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: true,
+    botanicalName: 'Olea europaea L. var. Chemlal',
+    origin: 'Hautes Montagnes du Djurdjura, Tizi Ouzou, Algérie',
+    extractionMethod: {
+      fr: 'Extraction à froid traditionnelle sur meules de pierre et séparation par décantation naturelle sous vide.',
+      ar: 'عصر بارد تقليدي بطواحين الحجر والترسيب الطبيعي بدون أي تسخين لحفظ النكهة الجبلية.',
+    },
+    specifications: {
+      appearance: { fr: 'Robe dorée chatoyante aux reflets émeraudes', ar: 'لون ذهبي دافئ مع بريق زمردي ساحر' },
+      aromaProfile: { fr: 'Fruité mûr velouté, amande douce, pomme reinette, note d’herbe séchée, sans aucune amertume agressive.', ar: 'نكهة ثمار ناضجة حريرية، لوز حلو وتفاح مع عذوبة طبيعية تنساب برقة.' },
+      density: '0.915 - 0.919',
+    },
+    storageInstructions: {
+      fr: 'À conserver au frais et à l’obscurité entre 14°C et 18°C.',
+      ar: 'يحفظ في مكان بارد ومعتم بين 14 و 18 درجة مئوية.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Vierge Extra Massif du Djurdjura',
+        shortDescription: 'L’élégance de la variété Chemlal des montagnes kabyles, fruité mûr et douceur veloutée.',
+        description: 'Cultivée sur des terrasses de montagne à plus de 800 mètres d’altitude, la variété Chemlal offre une huile gourmande et réconfortante, aux notes suaves d’amande et de fruits d’automne. Idéale pour les assaisonnements délicats et la gastronomie méditerranéenne.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز - مرتفعات جرجرة (القبائل)',
+        shortDescription: 'أصالة صنف الشملال من جبال جرجرة الشامخة، بنكهة ناضجة وحلاوة حريرية فريدة.',
+        description: 'يُزرع في بساتين جبلية شاهقة على ارتفاع يفوق 800 متر عن سطح البحر. يتميز صنف الشملال بنكهته السلسة اللطيفة ولمسات اللوز وثمار الخريف الحلوة، ليكون مثالياً للمأكولات الصحية وتتبيل الأطباق الراقية.',
+      },
+    },
+    imageTag: 'olive_oil',
+    variants: [
+      { id: 'var-ol-02-250', productId: 'prod-ol-02', sku: 'FLX-OL-002-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1500, stockQuantity: 90, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-02-500', productId: 'prod-ol-02', sku: 'FLX-OL-002-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 2650, stockQuantity: 70, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-02-750', productId: 'prod-ol-02', sku: 'FLX-OL-002-750ML', sizeValue: 750, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre prestige 750 ml', ar: 'قارورة زجاجية فاخرة 750 مل' }, priceDZD: 3800, stockQuantity: 50, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-02-5l', productId: 'prod-ol-02', sku: 'FLX-OL-002-5L', sizeValue: 5, sizeUnit: 'L', packagingLabel: { fr: 'Bidon métallique alimentaire 5 Litres', ar: 'عبوة معدنية غذائية 5 لتر' }, priceDZD: 20500, stockQuantity: 25, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-20T08:30:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-03',
+    sku: 'FLX-OL-003',
+    slug: 'huile-olive-extra-vierge-monts-aures',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: false,
+    botanicalName: 'Olea europaea L. var. Azeradj',
+    origin: 'Piémonts des Monts des Aurès, Batna & Khenchela, Algérie',
+    extractionMethod: {
+      fr: 'Première extraction à froid en moulin moderne certifié, régulation thermique stricte sous 21°C.',
+      ar: 'عصرة أولى على البارد في معصرة حديثة معتمدة بضبط حراري دقيق دون 21° مئوية.',
+    },
+    specifications: {
+      appearance: { fr: 'Jaune paille scintillant aux reflets dorés', ar: 'أصفر ذهبي لامع براق' },
+      aromaProfile: { fr: 'Caractère montagnard franc, herbe de steppe, fleur de genêt, finale poivrée et vigoureuse.', ar: 'طابع جبلي أصيل، عبق نباتات السهوب وزهر الحولان مع لمسة فلفلية قوية ومنشطة.' },
+      density: '0.914 - 0.917',
+    },
+    storageInstructions: {
+      fr: 'À préserver de l’humidité et des variations de température.',
+      ar: 'يحفظ بعيداً عن الرطوبة وتقلبات درجات الحرارة.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Vierge Extra Monts des Aurès',
+        shortDescription: 'Le caractère intense de la variété Azeradj des contreforts semi-arides des Aurès.',
+        description: 'L’ensoleillement généreux et les nuits fraîches des plateaux chaouis confèrent aux olives Azeradj une intensité gustative remarquable, une teneur remarquable en vitamine E naturelle et un profil aromatique vigoureux qui rehausse les plats traditionnels.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز - سفوح جبال الأوراس (باتنة)',
+        shortDescription: 'قوة ونقاء صنف أزراج من الهضاب الجبلية المشمسة للأوراس الأشم.',
+        description: 'تمنح شمس الأوراس الساطعة ولياليها الباردة ثمار الأزراج قوة غذائية عالية وغنى استثنائياً بفيتامين E الطبيعي، لتعطي زيتاً أصيلاً بلمسة بهارات ترابية مميزة تعزز طعم الطبخ العريق.',
+      },
+    },
+    imageTag: 'olive_oil',
+    variants: [
+      { id: 'var-ol-03-250', productId: 'prod-ol-03', sku: 'FLX-OL-003-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV 250 ml', ar: 'قارورة زجاجية معتمة 250 مل' }, priceDZD: 1450, stockQuantity: 80, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-03-500', productId: 'prod-ol-03', sku: 'FLX-OL-003-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV 500 ml', ar: 'قارورة زجاجية معتمة 500 مل' }, priceDZD: 2550, stockQuantity: 65, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-03-750', productId: 'prod-ol-03', sku: 'FLX-OL-003-750ML', sizeValue: 750, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre prestige 750 ml', ar: 'قارورة زجاجية فاخرة 750 مل' }, priceDZD: 3700, stockQuantity: 40, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-22T09:00:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-04',
+    sku: 'FLX-OL-004',
+    slug: 'huile-olive-extra-vierge-plaines-mitidja',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: false,
+    botanicalName: 'Olea europaea L. var. Limli & Sigoise',
+    origin: 'Plaines Fertiles de la Mitidja (Blida & Boufarik), Algérie',
+    extractionMethod: {
+      fr: 'Extraction continue moderne sous atmosphère inerte à 20°C pour une fraîcheur florale optimale.',
+      ar: 'عصر مستمر حديث تحت جو خامل على 20° مئوية للحفاظ على النضارة الزهرية القصوى.',
+    },
+    specifications: {
+      appearance: { fr: 'Vert amande clair et lumineux', ar: 'أخضر لوزي فاتح ومشرق' },
+      aromaProfile: { fr: 'Fruité doux, herbe fraîchement coupée, noisette tendre, équilibre tout en finesse.', ar: 'نكهة فاكهية ناعمة، رائحة العشب الأخضر الندي وبندق طري بدون حدة.' },
+      density: '0.915 - 0.918',
+    },
+    storageInstructions: {
+      fr: 'À conserver au frais et à l’abri de la lumière.',
+      ar: 'يحفظ مبرداً بعيداً عن الضوء.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Vierge Extra Plaines de la Mitidja',
+        shortDescription: 'L’harmonie végétale des vergers de la Mitidja, arômes printaniers d’herbe fraîche et d’amande.',
+        description: 'Les alluvions fertiles de la plaine de Blida et la brise marine de la baie d’Alger nourrissent des oliviers florissants. Cette cuvée d’une douceur exemplaire convient à toute la famille et magnifie les crudités, poissons vapeurs et carpaccios.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز - سهول المتيجة الخصبة (البليدة)',
+        shortDescription: 'التناغم النباتي العذب لبساتين المتيجة، بنفحات العشب المنعش واللوز الطري.',
+        description: 'تغذي تربة المتيجة الرسوبية الخصبة ونسيم البحر المتوسط أشجار زيتون غناء. يتميز هذا المحصول بنعومة فائقة محبوبة لدى الجميع ومثالية للسلطات، الأسماك المطهوة على البخار وتتبيل المأكولات الصحية.',
+      },
+    },
+    imageTag: 'olive_oil',
+    variants: [
+      { id: 'var-ol-04-250', productId: 'prod-ol-04', sku: 'FLX-OL-004-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV 250 ml', ar: 'قارورة زجاجية معتمة 250 مل' }, priceDZD: 1350, stockQuantity: 95, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-04-500', productId: 'prod-ol-04', sku: 'FLX-OL-004-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV 500 ml', ar: 'قارورة زجاجية معتمة 500 مل' }, priceDZD: 2400, stockQuantity: 75, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-04-750', productId: 'prod-ol-04', sku: 'FLX-OL-004-750ML', sizeValue: 750, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre prestige 750 ml', ar: 'قارورة زجاجية فاخرة 750 مل' }, priceDZD: 3500, stockQuantity: 55, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-04-5l', productId: 'prod-ol-04', sku: 'FLX-OL-004-5L', sizeValue: 5, sizeUnit: 'L', packagingLabel: { fr: 'Bidon métallique alimentaire 5 Litres', ar: 'عبوة معدنية غذائية 5 لتر' }, priceDZD: 18900, stockQuantity: 20, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-22T10:00:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-05',
+    sku: 'FLX-OL-005',
+    slug: 'huile-olive-extra-vierge-aromatisee-romarin-sauvage',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: true,
+    botanicalName: 'Olea europaea & Rosmarinus officinalis L.',
+    origin: 'Sig (Mascara) & Montagnes de l’Ouarsenis, Algérie',
+    extractionMethod: {
+      fr: 'Macération lente à froid de sommités fleuries de romarin sauvage cueillies à la main dans notre huile d’olive vierge extra de Sig.',
+      ar: 'نقع بطيء على البارد لأطراف أزهار إكليل الجبل البري في زيت زيتون سيق البكر الممتاز.',
+    },
+    specifications: {
+      appearance: { fr: 'Vert olive profond aux reflets dorés', ar: 'أخضر زيتوني عميق ببريق ذهبي' },
+      aromaProfile: { fr: 'Notes boisées, résineuses et camphrées puissantes, parfum de garrigue réconfortant.', ar: 'روائح خشبية راتنجية قوية وعطر الكافور النقي من نباتات الجبال الجزائرية.' },
+    },
+    storageInstructions: {
+      fr: 'À conserver au frais et à l’abri de la lumière.',
+      ar: 'يحفظ في مكان بارد وجاف بعيداً عن الضوء.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Extra Vierge Aromatisée au Romarin Sauvage',
+        shortDescription: 'Infusion à froid de romarin sauvage de l’Atlas dans notre huile d’olive vierge extra de Sig.',
+        description: 'La rencontre entre la rondeur fruitée de l’huile d’olive extra vierge de Sig et la vivacité aromatique du romarin sauvage des crêtes de l’Ouarsenis. Rehausse magnifiquement les viandes rôties, gigots d’agneau, pommes de terre au four et focaccias artisanales.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز منكّه بإكليل الجبل البري (الروزماري)',
+        shortDescription: 'نقع بارد لنبات الروزماري الجبلي البري في زيت زيتون سيق البكر الممتاز.',
+        description: 'تلاقٍ ساحر بين غنى زيت الزيتون البكر الممتاز وقوة الانتعاش العطري لإكليل الجبل البري من جبال الونشريس. يمنح اللحوم المشوية، لحم الضأن، البطاطا المخبوزة في الفرن والخبز التقليدي نكهة متوسطية لا تُقاوم.',
+      },
+    },
+    imageTag: 'olive_rosemary',
+    variants: [
+      { id: 'var-ol-05-250', productId: 'prod-ol-05', sku: 'FLX-OL-005-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1650, stockQuantity: 90, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-05-500', productId: 'prod-ol-05', sku: 'FLX-OL-005-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 2900, stockQuantity: 65, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-25T11:00:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-06',
+    sku: 'FLX-OL-006',
+    slug: 'huile-olive-extra-vierge-aromatisee-thym-zaatar',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: true,
+    botanicalName: 'Olea europaea & Thymus ciliatus / Origanum floribundum',
+    origin: 'Coteaux du Djurdjura & Garrigues Algériennes',
+    extractionMethod: {
+      fr: 'Infusion artisanale à froid de thym cilié sauvage et d’origan des rocailles dans une huile d’olive vierge extra de Kabylie.',
+      ar: 'نقع تقليدي بارد للزعتر البري والأوريغانو الجبلي في زيت زيتون جرجرة البكر الممتاز.',
+    },
+    specifications: {
+      appearance: { fr: 'Or chaud aux reflets bronze éclatants', ar: 'ذهبي برونزي دافئ مشرق' },
+      aromaProfile: { fr: 'Chaud, herbacé puissant, note de thym de montagne et origan fleuri (parfum authentique de zaatar).', ar: 'رائحة عشبية دافئة ونفاذة تجمع بين الزعتر البري وأزهار الأوريغانو الجبلي.' },
+    },
+    storageInstructions: {
+      fr: 'À conserver dans son flacon d’origine à température ambiante tempérée.',
+      ar: 'يحفظ في القارورة الأصلية بدرجة حرارة الغرفة المعتدلة.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Extra Vierge Aromatisée au Thym des Garrigues & Zaatar',
+        shortDescription: 'L’authentique parfum du zaatar sauvage algérien infusé dans une huile d’olive vierge extra dorée.',
+        description: 'Une alliance méditerranéenne réconfortante capturant les essences balsamiques du thym sauvage de montagne et de l’origan floral. Parfaite pour tremper le pain chaud traditionnel, sublimer les salades de tomates fraîches, les fromages blancs et les grillades.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز منكّه بالزعتر البري والأوريغانو (الزعتر الأصيل)',
+        shortDescription: 'عبير الزعتر الجبلي الجزائري الأصيل منقوع في زيت زيتون بكر ممتاز ذهبي.',
+        description: 'توليفة متوسطية دافئة تلتقط الخلاصات العطرية للزعتر البري والأوريغانو الجبلي الفواح. مثالي لتغميس الخبز التقليدي الساخن، وإضفاء لمسة ساحرة على سلطات الطماطم والأجبان الطازجة والمشاوي.',
+      },
+    },
+    imageTag: 'olive_thyme',
+    variants: [
+      { id: 'var-ol-06-250', productId: 'prod-ol-06', sku: 'FLX-OL-006-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1650, stockQuantity: 85, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-06-500', productId: 'prod-ol-06', sku: 'FLX-OL-006-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 2900, stockQuantity: 60, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-25T11:30:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-07',
+    sku: 'FLX-OL-007',
+    slug: 'huile-olive-extra-vierge-aromatisee-citron-vert-bergamote',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: true,
+    botanicalName: 'Olea europaea & Citrus aurantifolia / Citrus bergamia',
+    origin: 'Vergers de la Mitidja (Blida & Boufarik), Algérie',
+    extractionMethod: {
+      fr: 'Co-pressage mécanique simultané d’olives vertes fraîches et d’écorces fraîches de citron vert et de bergamote de vergers biologiques.',
+      ar: 'عصر متزامن في المطحنة لحبات الزيتون الطازجة مع قشور الليمون الأخضر والبرغموت الطبيعي.',
+    },
+    specifications: {
+      appearance: { fr: 'Jaune chartreuse vif, éclatant et limpide', ar: 'أصفر ليموني نضر ومشرق' },
+      aromaProfile: { fr: 'Explosion vivifiante d’agrumes piquants, zestes confits et fraîcheur végétale éclatante.', ar: 'انتعاش مذهل للحمضيات والزيوت العطرية لقشور الليمون والبرغموت الطازجة.' },
+    },
+    storageInstructions: {
+      fr: 'À préserver de la chaleur pour préserver les esters volatils des agrumes.',
+      ar: 'يحفظ بعيداً عن الحرارة لحماية المركبات العطرية للحمضيات.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Extra Vierge Pressée au Citron Vert & Bergamote',
+        shortDescription: 'Pressage simultané d’olives fraîches et d’agrumes de la Mitidja pour une fraîcheur éclatante.',
+        description: 'Les zestes gorgés d’essences de citrons verts et bergamotes de Blida sont broyés directement avec les olives fraîches au moulin. Cette technique noble de co-extraction offre une explosion aromatique inimitable sur les poissons grillés, tartares, carpaccios et crustacés.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز معصور مع الليمون الأخضر والبرغموت',
+        shortDescription: 'عصر متزامن لحبات الزيتون مع قشور حمضيات المتيجة لانتعاش نضر لا يضاهى.',
+        description: 'تُطحن قشور الليمون الأخضر والبرغموت الفواحة من بساتين البليدة مع حبات الزيتون في المعصرة في آن واحد. تمنح هذه الطريقة العريقة نكهة حمضية منعشة استثنائية للأسماك المشوية، السلطات الصيفية والمأكولات البحرية.',
+      },
+    },
+    imageTag: 'olive_lemon',
+    variants: [
+      { id: 'var-ol-07-250', productId: 'prod-ol-07', sku: 'FLX-OL-007-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1750, stockQuantity: 80, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-07-500', productId: 'prod-ol-07', sku: 'FLX-OL-007-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 3100, stockQuantity: 55, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-26T09:00:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-08',
+    sku: 'FLX-OL-008',
+    slug: 'huile-olive-extra-vierge-aromatisee-piment-harissa-biskra',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: true,
+    botanicalName: 'Olea europaea & Capsicum annuum L.',
+    origin: 'Sig (Mascara) & Oasis de Biskra, Algérie',
+    extractionMethod: {
+      fr: 'Macération lente de piments rouges séchés au soleil de Biskra, fumés au bois de palmier et relevés de graines de carvi et coriandre.',
+      ar: 'نقع بطيء للفلفل الأحمر المجفف تحت شمس بسكرة، والمدخن بخشب النخيل مع بذور الكروياء والكزبرة.',
+    },
+    specifications: {
+      appearance: { fr: 'Rubis vermillon intense et luminescent', ar: 'أحمر قرمزي متوهج وساحر' },
+      aromaProfile: { fr: 'Piquant franc et chaleureux, arôme noble de poivron mûr et fumée délicate, saveur profonde de harissa artisanale.', ar: 'حرارة متوازنة دافئة، نكهة فلفل ناضج مدخن مع طعم الهريسة التقليدية الأصيلة.' },
+    },
+    storageInstructions: {
+      fr: 'Conserver à l’abri de la lumière et bien agiter avant chaque utilisation.',
+      ar: 'يحفظ بعيداً عن الضوء ويرج جيداً قبل الاستعمال.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Extra Vierge Aromatisée au Piment Fumé & Harissa de Biskra',
+        shortDescription: 'L’intensité du piment rouge saharien et des épices traditionnelles dans une huile vierge extra.',
+        description: 'Inspirée du terroir généreux de la porte du désert, cette huile ardente marie le fruité soyeux de l’huile d’olive extra vierge aux notes fumées du piment rouge de Biskra, relevé d’une touche de carvi et de graines de coriandre. Incontournable sur couscous, chorba frik, tajines et pizzas.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز منكّه بالفلفل المدخن وهريسة بسكرة',
+        shortDescription: 'حرارة الفلفل الصحراوي ونكهة التوابل التقليدية في زيت زيتون بكر ممتاز.',
+        description: 'مستوحى من أصالة بوابة الصحراء بسكرة، يمزج هذا الزيت الحار بين نعومة زيت الزيتون البكر الممتاز والنكهة المدخنة للفلفل الأحمر الحار مع لمسة كروياء وكزبرة. مثالي لأطباق الكسكسي والشوربة فريك والطواجن التقليدية.',
+      },
+    },
+    imageTag: 'olive_chili',
+    variants: [
+      { id: 'var-ol-08-250', productId: 'prod-ol-08', sku: 'FLX-OL-008-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1700, stockQuantity: 85, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-08-500', productId: 'prod-ol-08', sku: 'FLX-OL-008-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 2950, stockQuantity: 60, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-26T10:00:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-09',
+    sku: 'FLX-OL-009',
+    slug: 'huile-olive-extra-vierge-aromatisee-ail-rose-truffe',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: false,
+    botanicalName: 'Olea europaea & Allium sativum / Terfezia boudieri',
+    origin: 'Sig (Mascara) & Terroirs Sahariens (El Oued / Djelfa), Algérie',
+    extractionMethod: {
+      fr: 'Infusion gastronomique d’ail rose confit à basse température et d’extraits naturels de truffe blanche du désert (Terfès algérien).',
+      ar: 'نقع راقٍ للثوم الوردي المشوي على نار هادئة مع مستخلص فطر الكمأة الصحراوية (الترفاس الجزائري).',
+    },
+    specifications: {
+      appearance: { fr: 'Ambre foncé translucide et soyeux', ar: 'عنبري دافئ شفاف وحريري' },
+      aromaProfile: { fr: 'Profondeur umami envoûtante, notes de sous-bois, truffe blanche et douceur d’ail confit.', ar: 'نكهة ترابية عميقة وساحرة مع عبق الكمأة ونعومة الثوم الحلو الذائب.' },
+    },
+    storageInstructions: {
+      fr: 'Conserver hermétiquement fermé dans un endroit frais et sec.',
+      ar: 'يحفظ محكم الإغلاق في مكان بارد وجاف.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Extra Vierge Aromatisée à l’Ail Rose & Truffe du Terroir',
+        shortDescription: 'L’accord noble de l’ail rose rôti et de la truffe du désert dans une huile extra vierge.',
+        description: 'Une création gastronomique d’un grand raffinement. L’ail rose confit apporte rondeur et velouté, tandis que le terroir de truffe blanche apporte une signature aromatique boisée et noble. Transcende les pâtes fraîches, risottos, viandes rouges et purées maison.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز منكّه بالثوم الوردي والكمأة الصحراوية (الترفاس)',
+        shortDescription: 'التناغم الراقي بين الثوم الوردي المشوي والكمأة الصحراوية في زيت زيتون بكر ممتاز.',
+        description: 'إبداع طهي فاخر يجمع حلاوة الثوم الوردي المحمص ببطء مع الفخامة العطرية للترفاس الجزائري النادر. يضفي نكهة لا تُنسى على المعكرونة الطازجة، أطباق الأرز واللحوم الفاخرة.',
+      },
+    },
+    imageTag: 'olive_garlic',
+    variants: [
+      { id: 'var-ol-09-250', productId: 'prod-ol-09', sku: 'FLX-OL-009-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1950, stockQuantity: 65, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-09-500', productId: 'prod-ol-09', sku: 'FLX-OL-009-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 3400, stockQuantity: 45, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-27T08:30:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
+  },
+  {
+    id: 'prod-ol-10',
+    sku: 'FLX-OL-010',
+    slug: 'huile-olive-extra-vierge-aromatisee-basilic-laurier-kabylie',
+    categoryId: 'olive-oils',
+    status: 'published',
+    isFeatured: false,
+    botanicalName: 'Olea europaea & Ocimum basilicum / Laurus nobilis',
+    origin: 'Vallée de la Soummam & Kabylie Maritime, Algérie',
+    extractionMethod: {
+      fr: 'Macération douce à l’abri de l’air et de la lumière de feuilles entières de basilic grand vert et de laurier noble de montagne.',
+      ar: 'نقع لطيف في معزل عن الضوء والهواء لأوراق الحبق الأخضر ورند الغابات الجبلية في الزيت البكر الممتاز.',
+    },
+    specifications: {
+      appearance: { fr: 'Vert émeraude éclatant et limpide', ar: 'أخضر زمردي ناصع ورائق' },
+      aromaProfile: { fr: 'Fraîcheur herbacée éclatante, notes anisées du basilic et arôme balsamique noble du laurier.', ar: 'انتعاش نباتي أخضر بنكهة الحبق الزكية ولمسة الرند البلسمية الراقية.' },
+    },
+    storageInstructions: {
+      fr: 'À conserver au frais et à l’abri de la lumière.',
+      ar: 'يحفظ في مكان بارد ومعتم.',
+    },
+    translations: {
+      fr: {
+        name: 'Huile d’Olive Extra Vierge Aromatisée au Basilic & Laurier Noble',
+        shortDescription: 'L’arôme printanier du basilic grand vert et du laurier de Kabylie macérés à froid.',
+        description: 'Une harmonie végétale pure et lumineuse. Les feuilles de basilic frais cueillies au petit matin confèrent à l’huile d’olive vierge extra une verdeur aromatique exaltante, soutenue par l’élégance du laurier noble. Magnifie les salades de tomates anciennes, mozzarellas, burratas et carpaccios.',
+      },
+      ar: {
+        name: 'زيت زيتون بكر ممتاز منكّه بالحبق (البازيليك) وورق الغار (الرند)',
+        shortDescription: 'العبير المنعش لأوراق الحبق الطازج والرند الجبلي المنقوع على البارد في زيت الزيتون.',
+        description: 'تناغم نباتي منعش ومشرق. تُجنى أوراق الحبق الأخضر في الصباح الباكر لتمنح زيت الزيتون البكر الممتاز نضارة عطرية فورية مع عمق ورق الغار الجبلي الأصيل. رائع لسلطات الطماطم والأجبان والمقبلات الصيفية.',
+      },
+    },
+    imageTag: 'olive_basil',
+    variants: [
+      { id: 'var-ol-10-250', productId: 'prod-ol-10', sku: 'FLX-OL-010-250ML', sizeValue: 250, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 250 ml', ar: 'قارورة زجاجية معتمة ماراسكا 250 مل' }, priceDZD: 1650, stockQuantity: 90, trackInventory: true, isActive: true, isPurchasableOnline: true },
+      { id: 'var-ol-10-500', productId: 'prod-ol-10', sku: 'FLX-OL-010-500ML', sizeValue: 500, sizeUnit: 'ml', packagingLabel: { fr: 'Bouteille verre anti-UV Marasca 500 ml', ar: 'قارورة زجاجية معتمة ماراسكا 500 مل' }, priceDZD: 2900, stockQuantity: 60, trackInventory: true, isActive: true, isPurchasableOnline: true },
+    ],
+    documents: [],
+    createdAt: '2025-01-27T09:00:00Z',
+    updatedAt: '2025-02-16T10:00:00Z',
   },
 ];

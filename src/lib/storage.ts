@@ -249,7 +249,17 @@ class StorageService {
   }
 
   getProducts(): Product[] {
-    return this.get<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    const stored = this.get<Product[]>(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS);
+    // If stored products lack the new olive oils or has fewer items, merge seamlessly
+    const hasOliveOils = stored.some((p) => p.categoryId === 'olive-oils');
+    if (!hasOliveOils || stored.length < INITIAL_PRODUCTS.length) {
+      const storedIds = new Set(stored.map((p) => p.id));
+      const missingProducts = INITIAL_PRODUCTS.filter((p) => !storedIds.has(p.id));
+      const merged = [...stored, ...missingProducts];
+      this.saveProducts(merged);
+      return merged;
+    }
+    return stored;
   }
 
   saveProducts(products: Product[]): void {
@@ -257,7 +267,13 @@ class StorageService {
   }
 
   getCategories(): Category[] {
-    return this.get<Category[]>(STORAGE_KEYS.CATEGORIES, CATEGORIES);
+    const stored = this.get<Category[]>(STORAGE_KEYS.CATEGORIES, CATEGORIES);
+    const hasOliveCategory = stored.some((c) => c.slug === 'olive-oils');
+    if (!hasOliveCategory) {
+      this.saveCategories(CATEGORIES);
+      return CATEGORIES;
+    }
+    return stored;
   }
 
   saveCategories(categories: Category[]): void {

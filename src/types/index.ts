@@ -1,6 +1,6 @@
 export type Locale = 'fr' | 'ar';
 
-export type CategorySlug = 'essential-oils' | 'vegetable-oils' | 'hydrolats';
+export type CategorySlug = 'essential-oils' | 'vegetable-oils' | 'hydrolats' | 'olive-oils';
 
 export interface Category {
   id: string;

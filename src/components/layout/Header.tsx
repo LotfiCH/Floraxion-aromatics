@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Locale } from '../../types';
 import { getDictionary } from '../../lib/i18n';
-import { ShoppingBag, Menu, X, ShieldCheck, ChevronDown } from 'lucide-react';
+import { ShoppingBag, Menu, X, ShieldCheck } from 'lucide-react';
 
 interface HeaderProps {
   locale: Locale;
@@ -21,19 +21,16 @@ export const Header: React.FC<HeaderProps> = ({
   setActiveView,
   cartCount,
   openCart,
-  selectedCategory,
+  selectedCategory: _selectedCategory,
   setSelectedCategory,
 }) => {
   const t = getDictionary(locale);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [productsDropdownOpen, setProductsDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const navigateTo = (view: string, category: string | null = null) => {
     setActiveView(view);
     setSelectedCategory(category);
     setMobileMenuOpen(false);
-    setProductsDropdownOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -44,190 +41,118 @@ export const Header: React.FC<HeaderProps> = ({
     document.documentElement.dir = nextLocale === 'ar' ? 'rtl' : 'ltr';
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setProductsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   return (
     <header className="sticky top-0 z-40 bg-[#F8F7F2]/95 backdrop-blur-md border-b border-[#E3E5DF] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-6 sm:gap-8 h-18">
-          {/* Zone 1: Brand Wordmark (Vertically centered) */}
+        <div className="flex items-center justify-between gap-4 h-18">
+          {/* Zone 1: Brand Wordmark */}
           <button
             onClick={() => navigateTo('home')}
-            className="flex items-center gap-2 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#244A3B] rounded-sm py-1"
+            className="flex items-baseline gap-2 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#244A3B] rounded-xs py-1"
+            aria-label="Floraxion Aromatics"
           >
             <span className="font-serif-botanical text-2xl sm:text-3xl font-semibold tracking-tight text-[#244A3B] leading-none">
               Floraxion
             </span>
-            <span className="text-[11px] tracking-widest uppercase font-medium text-[#829477] hidden sm:inline leading-none">
+            <span className="text-[10px] sm:text-[11px] tracking-widest uppercase font-medium text-[#829477] hidden sm:inline leading-none">
               Aromatics
             </span>
           </button>
 
-          {/* Zone 2: Streamlined 3 Navigation Links */}
+          {/* Zone 2: Streamlined 3 Navigation Buttons - Reduced, Clean, No Dropdown */}
           <nav className="hidden lg:flex items-center gap-8 text-sm font-medium text-[#292D29]">
-            {/* 1. Nos Produits with Dropdown */}
-            <div
-              ref={dropdownRef}
-              className="relative"
-              onMouseEnter={() => setProductsDropdownOpen(true)}
-              onMouseLeave={() => setProductsDropdownOpen(false)}
+            {/* 1. Nos Produits: Combines all three product categories in one place */}
+            <button
+              onClick={() => navigateTo('shop', null)}
+              className={`transition-colors whitespace-nowrap cursor-pointer py-1.5 border-b-2 ${
+                activeView === 'shop'
+                  ? 'text-[#244A3B] font-semibold border-[#244A3B]'
+                  : 'text-[#292D29]/75 hover:text-[#244A3B] border-transparent'
+              }`}
             >
-              <button
-                onClick={() => navigateTo('shop', null)}
-                className={`flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer py-1 ${
-                  activeView === 'shop'
-                    ? 'text-[#244A3B] font-semibold'
-                    : 'text-[#292D29]/80 hover:text-[#244A3B]'
-                }`}
-                aria-expanded={productsDropdownOpen}
-              >
-                <span>{t.nav.shop}</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-[#829477] transition-transform duration-200 ${
-                    productsDropdownOpen ? 'rotate-180' : ''
-                  }`}
-                />
-              </button>
+              {t.nav.shop}
+            </button>
 
-              {/* Dropdown Menu */}
-              {productsDropdownOpen && (
-                <div className="absolute start-0 top-full pt-2 w-64 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-                  <div className="bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs shadow-lg py-2 divide-y divide-[#E3E5DF]/60 text-xs">
-                    <button
-                      onClick={() => navigateTo('shop', null)}
-                      className={`w-full text-start px-4 py-2.5 transition-colors cursor-pointer flex items-center justify-between ${
-                        activeView === 'shop' && !selectedCategory
-                          ? 'bg-[#244A3B]/10 text-[#244A3B] font-semibold'
-                          : 'hover:bg-black/5 text-[#292D29]'
-                      }`}
-                    >
-                      <span>{t.nav.allProducts}</span>
-                      <span className="font-mono text-[10px] text-[#829477]">35</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('shop', 'essential-oils')}
-                      className={`w-full text-start px-4 py-2.5 transition-colors cursor-pointer flex items-center justify-between ${
-                        activeView === 'shop' && selectedCategory === 'essential-oils'
-                          ? 'bg-[#244A3B]/10 text-[#244A3B] font-semibold'
-                          : 'hover:bg-black/5 text-[#292D29]'
-                      }`}
-                    >
-                      <span>{t.nav.essentialOils}</span>
-                      <span className="font-mono text-[10px] text-[#829477]">28</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('shop', 'vegetable-oils')}
-                      className={`w-full text-start px-4 py-2.5 transition-colors cursor-pointer flex items-center justify-between ${
-                        activeView === 'shop' && selectedCategory === 'vegetable-oils'
-                          ? 'bg-[#244A3B]/10 text-[#244A3B] font-semibold'
-                          : 'hover:bg-black/5 text-[#292D29]'
-                      }`}
-                    >
-                      <span>{t.nav.vegetableOils}</span>
-                      <span className="font-mono text-[10px] text-[#829477]">5</span>
-                    </button>
-
-                    <button
-                      onClick={() => navigateTo('shop', 'hydrolats')}
-                      className={`w-full text-start px-4 py-2.5 transition-colors cursor-pointer flex items-center justify-between ${
-                        activeView === 'shop' && selectedCategory === 'hydrolats'
-                          ? 'bg-[#244A3B]/10 text-[#244A3B] font-semibold'
-                          : 'hover:bg-black/5 text-[#292D29]'
-                      }`}
-                    >
-                      <span>{t.nav.hydrolats}</span>
-                      <span className="font-mono text-[10px] text-[#829477]">2</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 2. Espace Pro (Shortened) */}
+            {/* 2. Devis B2B: Shortened from lengthy name */}
             <button
               onClick={() => navigateTo('b2b')}
-              className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer py-1 ${
+              className={`transition-colors whitespace-nowrap cursor-pointer py-1.5 border-b-2 ${
                 activeView === 'b2b'
-                  ? 'text-[#244A3B] font-semibold'
-                  : 'text-[#292D29]/80 hover:text-[#244A3B]'
+                  ? 'text-[#244A3B] font-semibold border-[#244A3B]'
+                  : 'text-[#292D29]/75 hover:text-[#244A3B] border-transparent'
               }`}
             >
               {t.nav.b2b}
             </button>
 
-            {/* 3. À Propos (Renamed from Maison Floraxion) */}
+            {/* 3. À propos: Renamed from Maison Floraxion */}
             <button
               onClick={() => navigateTo('about')}
-              className={`transition-colors whitespace-nowrap shrink-0 cursor-pointer py-1 ${
+              className={`transition-colors whitespace-nowrap cursor-pointer py-1.5 border-b-2 ${
                 activeView === 'about'
-                  ? 'text-[#244A3B] font-semibold'
-                  : 'text-[#292D29]/80 hover:text-[#244A3B]'
+                  ? 'text-[#244A3B] font-semibold border-[#244A3B]'
+                  : 'text-[#292D29]/75 hover:text-[#244A3B] border-transparent'
               }`}
             >
               {t.nav.about}
             </button>
           </nav>
 
-          {/* Zone 3: Perfectly Aligned Utility Buttons Cluster */}
-          <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-            {/* Locale Switcher Button */}
+          {/* Zone 3: Perfectly Aligned Utility Buttons Cluster (All uniform height h-9) */}
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+            {/* Language Switcher Button (Height 36px / h-9) */}
             <button
               onClick={toggleLanguage}
-              dir="ltr"
-              className="h-9 px-3 text-xs font-semibold tracking-wider text-[#244A3B] border border-[#244A3B]/30 hover:border-[#244A3B] hover:bg-[#244A3B]/5 rounded-xs transition-colors cursor-pointer font-sans flex items-center justify-center shrink-0"
+              className="h-9 px-3 text-xs font-semibold rounded-xs border border-[#E3E5DF] bg-[#FAF9F5] hover:bg-white text-[#244A3B] hover:border-[#244A3B] transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 shadow-2xs"
               title={locale === 'fr' ? 'التبديل إلى اللغة العربية' : 'Passer au Français'}
               aria-label="Changer de langue"
             >
-              {locale === 'fr' ? 'العربية · AR' : 'Français · FR'}
+              <span className="font-semibold">
+                {locale === 'fr' ? 'العربية' : 'Français'}
+              </span>
             </button>
 
-            {/* Admin Console Button */}
+            {/* Admin Console Button (Height 36px / h-9) */}
             <button
               onClick={() => navigateTo('admin')}
-              className={`h-9 px-3 text-xs font-medium rounded-xs transition-colors cursor-pointer flex items-center gap-1.5 shrink-0 border ${
+              className={`h-9 px-3 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 border shadow-2xs ${
                 activeView === 'admin'
                   ? 'bg-[#244A3B] text-white border-[#244A3B]'
-                  : 'border-transparent text-[#6D746E] hover:text-[#244A3B] hover:bg-black/5 hover:border-[#E3E5DF]'
+                  : 'border-[#E3E5DF] bg-[#FAF9F5] hover:bg-white text-[#292D29] hover:text-[#244A3B] hover:border-[#244A3B]'
               }`}
               title="Console d’administration"
               aria-label="Console d’administration"
             >
-              <ShieldCheck className="w-4 h-4" />
+              <ShieldCheck className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">{t.nav.admin}</span>
             </button>
 
-            {/* Cart Button with Live Counter */}
+            {/* Cart Button (Height 36px / h-9, matching alignment) */}
             <button
               onClick={openCart}
-              className="h-9 w-9 text-[#244A3B] hover:bg-[#244A3B]/5 rounded-xs transition-colors cursor-pointer flex items-center justify-center relative shrink-0 border border-transparent hover:border-[#E3E5DF]"
+              className="h-9 px-3 text-xs font-semibold rounded-xs border border-[#244A3B] bg-[#244A3B] hover:bg-[#1C3A2E] text-white transition-colors cursor-pointer inline-flex items-center justify-center gap-2 shrink-0 shadow-2xs"
               aria-label={`${t.nav.cart} (${cartCount})`}
             >
-              <ShoppingBag className="w-5 h-5" />
-              {cartCount > 0 && (
-                <span className="absolute top-1 -right-1 bg-[#244A3B] text-white text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center tabular-nums leading-none">
+              <ShoppingBag className="w-4 h-4" />
+              <span className="hidden sm:inline">{t.nav.cart}</span>
+              {cartCount > 0 ? (
+                <span className="bg-white text-[#244A3B] text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none tabular-nums">
                   {cartCount}
+                </span>
+              ) : (
+                <span className="bg-[#1C3A2E] text-[#F4F1E8]/90 text-[10px] font-medium px-1.5 py-0.5 rounded-full leading-none tabular-nums hidden sm:inline">
+                  0
                 </span>
               )}
             </button>
 
-            {/* Mobile Menu Toggle Button */}
+            {/* Mobile Menu Toggle Button (Height 36px / h-9) */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden h-9 w-9 flex items-center justify-center text-[#292D29] hover:bg-black/5 rounded-xs transition-colors cursor-pointer shrink-0"
+              className="lg:hidden h-9 w-9 inline-flex items-center justify-center rounded-xs border border-[#E3E5DF] bg-[#FAF9F5] text-[#292D29] hover:bg-white hover:border-[#244A3B] transition-colors cursor-pointer shrink-0 shadow-2xs"
               aria-label="Menu"
             >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -235,63 +160,57 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Collapsible Navigation */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-[#E3E5DF] bg-[#F8F7F2] px-6 py-6 space-y-4">
-          <div className="flex flex-col space-y-3 text-base font-medium">
+        <div className="lg:hidden border-t border-[#E3E5DF] bg-[#F8F7F2] px-6 py-5 space-y-3">
+          <div className="flex flex-col space-y-2 text-base font-medium">
             <button
               onClick={() => navigateTo('home')}
-              className="text-start py-2 text-[#292D29] hover:text-[#244A3B]"
+              className={`text-start py-2 px-2 rounded-xs transition-colors ${
+                activeView === 'home' ? 'text-[#244A3B] font-semibold bg-[#244A3B]/5' : 'text-[#292D29] hover:text-[#244A3B]'
+              }`}
             >
               {t.nav.home}
             </button>
 
-            <div className="border-t border-b border-[#E3E5DF] py-3 space-y-2">
-              <button
-                onClick={() => navigateTo('shop', null)}
-                className="text-start font-semibold text-[#244A3B] flex items-center justify-between w-full"
-              >
-                <span>{t.nav.shop}</span>
-                <span className="font-mono text-xs text-[#829477]">35 refs</span>
-              </button>
-              <button
-                onClick={() => navigateTo('shop', 'essential-oils')}
-                className="text-start ps-3 text-sm text-[#6D746E] hover:text-[#244A3B] block w-full py-1"
-              >
-                — {t.nav.essentialOils}
-              </button>
-              <button
-                onClick={() => navigateTo('shop', 'vegetable-oils')}
-                className="text-start ps-3 text-sm text-[#6D746E] hover:text-[#244A3B] block w-full py-1"
-              >
-                — {t.nav.vegetableOils}
-              </button>
-              <button
-                onClick={() => navigateTo('shop', 'hydrolats')}
-                className="text-start ps-3 text-sm text-[#6D746E] hover:text-[#244A3B] block w-full py-1"
-              >
-                — {t.nav.hydrolats}
-              </button>
-            </div>
+            {/* Combined products view */}
+            <button
+              onClick={() => navigateTo('shop', null)}
+              className={`text-start py-2 px-2 rounded-xs transition-colors flex items-center justify-between ${
+                activeView === 'shop' ? 'text-[#244A3B] font-semibold bg-[#244A3B]/5' : 'text-[#292D29] hover:text-[#244A3B]'
+              }`}
+            >
+              <span>{t.nav.shop}</span>
+              <span className="text-xs text-[#829477] font-mono">45 refs</span>
+            </button>
 
+            {/* Shortened Devis B2B */}
             <button
               onClick={() => navigateTo('b2b')}
-              className="text-start py-2 text-[#292D29] hover:text-[#244A3B]"
+              className={`text-start py-2 px-2 rounded-xs transition-colors ${
+                activeView === 'b2b' ? 'text-[#244A3B] font-semibold bg-[#244A3B]/5' : 'text-[#292D29] hover:text-[#244A3B]'
+              }`}
             >
               {t.nav.b2b}
             </button>
 
+            {/* Renamed À propos */}
             <button
               onClick={() => navigateTo('about')}
-              className="text-start py-2 text-[#292D29] hover:text-[#244A3B]"
+              className={`text-start py-2 px-2 rounded-xs transition-colors ${
+                activeView === 'about' ? 'text-[#244A3B] font-semibold bg-[#244A3B]/5' : 'text-[#292D29] hover:text-[#244A3B]'
+              }`}
             >
               {t.nav.about}
             </button>
 
+            {/* Admin Console */}
             <button
               onClick={() => navigateTo('admin')}
-              className="text-start py-2 text-[#244A3B] font-semibold flex items-center gap-2 pt-2 border-t border-[#E3E5DF]"
+              className={`text-start py-2 px-2 rounded-xs transition-colors flex items-center gap-2 pt-3 border-t border-[#E3E5DF] ${
+                activeView === 'admin' ? 'text-[#244A3B] font-semibold' : 'text-[#244A3B] hover:text-[#1C3A2E]'
+              }`}
             >
               <ShieldCheck className="w-4 h-4" />
-              {t.nav.admin}
+              <span>{t.nav.admin}</span>
             </button>
           </div>
         </div>

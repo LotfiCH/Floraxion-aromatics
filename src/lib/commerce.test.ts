@@ -164,3 +164,23 @@ test('validateOrderStatusTransition enforces legal transitions', () => {
   assert.equal(validateOrderStatusTransition('pending', 'delivered'), false); // Illegal jump
   assert.equal(validateOrderStatusTransition('cancelled', 'confirmed'), false); // Cannot revive cancelled
 });
+
+test('catalogue contains exactly 10 extra virgin & aromatized olive oil products with valid variants', async () => {
+  const { INITIAL_PRODUCTS, CATEGORIES } = await import('../data/catalogue.ts');
+  const oliveCategory = CATEGORIES.find((c) => c.slug === 'olive-oils');
+  assert.ok(oliveCategory, 'olive-oils category must exist in CATEGORIES');
+  assert.equal(oliveCategory?.translations.fr.name, 'Huiles d’Olive Vierge Extra & Aromatisées');
+
+  const oliveProducts = INITIAL_PRODUCTS.filter((p) => p.categoryId === 'olive-oils');
+  assert.equal(oliveProducts.length, 10, 'There must be exactly 10 olive oil products');
+
+  // Verify all 10 products have valid translations and active variants with DZD prices
+  for (const prod of oliveProducts) {
+    assert.ok(prod.translations.fr.name.length > 5, `${prod.id} must have French name`);
+    assert.ok(prod.translations.ar.name.length > 5, `${prod.id} must have Arabic name`);
+    assert.ok(prod.variants.length >= 2, `${prod.id} must have at least 2 packaging variants`);
+    const retailVariant = prod.variants.find((v) => v.isPurchasableOnline);
+    assert.ok(retailVariant, `${prod.id} must have at least one retail purchasable variant`);
+    assert.ok((retailVariant.priceDZD ?? 0) > 1000, `${prod.id} price must be realistic DZD`);
+  }
+});

@@ -26,6 +26,13 @@
   html[dir="rtl"] .font-serif-botanical {
     font-family: 'Amiri', 'Cairo', 'Noto Sans Arabic', serif;
   }
+
+  html[dir="rtl"] .font-mono,
+  html[dir="rtl"] [class*="font-mono"],
+  html[dir="rtl"] code,
+  html[dir="rtl"] pre {
+    font-family: 'Cairo', 'Noto Sans Arabic', system-ui, sans-serif !important;
+  }
 }
 
 @media print {

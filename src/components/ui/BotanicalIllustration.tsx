@@ -85,6 +85,62 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           amberLiquid: '#F5DCB0',
           label: 'CITRUS AURANTIUM FLOS',
         };
+      case 'olive_oil':
+        return {
+          bg: 'from-[#F5F4E8] to-[#E5E3CD]',
+          accent: '#556B2F',
+          accentLight: '#8F9754',
+          amberLiquid: '#D4AF37',
+          label: 'OLEA EUROPAEA VIRGO EXTRA',
+        };
+      case 'olive_rosemary':
+        return {
+          bg: 'from-[#F3F4EB] to-[#DFE2D0]',
+          accent: '#3E5C38',
+          accentLight: '#7E9B66',
+          amberLiquid: '#CCA028',
+          label: 'OLEA & ROSMARINUS SILVESTRIS',
+        };
+      case 'olive_thyme':
+        return {
+          bg: 'from-[#F5F2E8] to-[#E5DFCC]',
+          accent: '#5E5232',
+          accentLight: '#9E8D56',
+          amberLiquid: '#CFA32B',
+          label: 'OLEA & THYMUS VULGARIS',
+        };
+      case 'olive_lemon':
+        return {
+          bg: 'from-[#F7F6EA] to-[#E9E6C9]',
+          accent: '#6E7029',
+          accentLight: '#B5B84B',
+          amberLiquid: '#E2B82E',
+          label: 'OLEA & CITRUS BERGAMIA',
+        };
+      case 'olive_chili':
+        return {
+          bg: 'from-[#F7EFEA] to-[#EBD9CE]',
+          accent: '#8C3B2B',
+          accentLight: '#C2654D',
+          amberLiquid: '#D66A2C',
+          label: 'OLEA & CAPSICUM ANNUUM',
+        };
+      case 'olive_garlic':
+        return {
+          bg: 'from-[#F6F3EB] to-[#E7E0D1]',
+          accent: '#544636',
+          accentLight: '#8C7761',
+          amberLiquid: '#CBA43D',
+          label: 'OLEA & ALLIUM SATIVUM',
+        };
+      case 'olive_basil':
+        return {
+          bg: 'from-[#F1F5EB] to-[#DDE7D0]',
+          accent: '#325838',
+          accentLight: '#65966E',
+          amberLiquid: '#C2AC30',
+          label: 'OLEA & OCIMUM BASILICUM',
+        };
       default:
         return {
           bg: 'from-[#EFECE5] to-[#DFDAD0]',

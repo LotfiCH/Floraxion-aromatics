@@ -1,6 +1,7 @@
 import React from 'react';
 import { Locale } from '../../types';
 import { getDictionary } from '../../lib/i18n';
+import { ShieldCheck } from 'lucide-react';
 
 interface FooterProps {
   locale: Locale;
@@ -42,7 +43,7 @@ export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelect
             </div>
           </div>
 
-          {/* Col 2: Catalogue Navigation */}
+          {/* Col 2: Navigation Links */}
           <div>
             <h4 className="text-xs uppercase tracking-widest text-[#829477] font-semibold mb-4">
               {t.footer.linksTitle}
@@ -53,39 +54,32 @@ export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelect
                   onClick={() => handleNav('shop', null)}
                   className="hover:text-white transition-colors cursor-pointer"
                 >
-                  {t.nav.shop} (35 références)
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNav('shop', 'essential-oils')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  {t.nav.essentialOils} (28)
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNav('shop', 'vegetable-oils')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  {t.nav.vegetableOils} (5)
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handleNav('shop', 'hydrolats')}
-                  className="hover:text-white transition-colors cursor-pointer"
-                >
-                  {t.nav.hydrolats} (2)
+                  {t.nav.shop} (45)
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => handleNav('b2b')}
-                  className="hover:text-white transition-colors cursor-pointer text-[#829477] font-medium"
+                  className="hover:text-white transition-colors cursor-pointer"
                 >
                   {t.nav.b2b}
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => handleNav('about')}
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  {t.nav.about}
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => handleNav('admin')}
+                  className="hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 text-xs text-[#829477] hover:text-white pt-1"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#829477]" />
+                  <span>{t.nav.admin} (Back-office)</span>
                 </button>
               </li>
             </ul>
@@ -129,14 +123,6 @@ export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelect
                   {t.footer.legalNotice}
                 </button>
               </li>
-              <li className="pt-2 border-t border-[#1C3A2E]">
-                <button
-                  onClick={() => handleNav('admin')}
-                  className="text-xs font-semibold text-[#829477] hover:text-white transition-colors cursor-pointer flex items-center gap-1"
-                >
-                  <span>🔐 {locale === 'ar' ? 'بوابة إدارة الموقع والطلبيات' : 'Accès Administration & Commandes'}</span>
-                </button>
-              </li>
             </ul>
           </div>
 
@@ -151,7 +137,7 @@ export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelect
                 <span className="font-mono text-[#F4F1E8]">+213 (0) 23 92 10 40</span>
               </p>
               <p>
-                <span className="block text-xs text-[#829477] uppercase font-mono">Département B2B & Vrac :</span>
+                <span className="block text-xs text-[#829477] uppercase font-mono">Département Professionnel & Vrac :</span>
                 <span className="font-mono text-[#F4F1E8]">pro@floraxion.dz</span>
               </p>
               <p className="text-xs text-[#F4F1E8]/70 pt-2">
@@ -167,7 +153,7 @@ export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelect
           <div className="flex items-center gap-4 text-[11px] font-mono">
             <span>Algérie · Dinar Algérien (DZD)</span>
             <span>·</span>
-            <span>Catalogue 35 SKUs certifié</span>
+            <span>Catalogue 45 SKUs certifié</span>
           </div>
         </div>
       </div>
