@@ -27,12 +27,8 @@ service cloud.firestore {
       return hasRole('super_admin') || hasRole('sales_manager');
     }
 
-    function isAdmin() {
-      return hasAdminRecord();
-    }
-
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
     }
 
     // Default deny catch-all
@@ -42,7 +38,9 @@ service cloud.firestore {
 
     // Admins collection: verified administrators only; writes blocked on client (managed via server/Admin SDK)
     match /admins/{adminId} {
-      allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin()) && isValidId(adminId);
+      // A user can read their own record without consulting that record in a
+      // rule expression. Only super_admins can enumerate the collection.
+      allow get: if isSignedIn() && request.auth.uid == adminId && isValidId(adminId);
       allow list: if hasRole('super_admin');
       allow write: if false;
     }
@@ -79,13 +77,13 @@ service cloud.firestore {
 
     // Settings can contain operational or payment configuration.
     match /settings/{settingId} {
-      allow read: if isAdmin();
+      allow read: if hasRole('super_admin') && isValidId(settingId);
       allow write: if hasRole('super_admin') && isValidId(settingId);
     }
 
     // Audit entries are immutable for clients.
     match /audit_logs/{logId} {
-      allow read: if isAdmin() && isValidId(logId);
+      allow read: if hasAdminRecord() && isValidId(logId);
       allow create: if (hasRole('super_admin')
           || hasRole('catalogue_manager')
           || hasRole('order_manager')

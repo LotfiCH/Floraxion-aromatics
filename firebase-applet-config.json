@@ -1,12 +1,12 @@
 {
-  "projectId": "impactful-oarlock-jc70r",
-  "appId": "1:340472158401:web:b887535d41baec7f641c40",
-  "apiKey": "AIzaSyDwiQEw5qsJDsKAknE3hMPovczGAGWPRao",
-  "authDomain": "impactful-oarlock-jc70r.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-floraxionaromati-dc0af519-35d8-448c-bb25-ff78caf4e69c",
-  "storageBucket": "impactful-oarlock-jc70r.firebasestorage.app",
-  "messagingSenderId": "340472158401",
-  "measurementId": "",
-  "oAuthClientId": "340472158401-61mvt0c4mfmbn6csijftrbgvloi9vslp.apps.googleusercontent.com",
+  "projectId": "floraxionaromatics-e0b00",
+  "appId": "1:300970204302:web:7207f380bf8e28bc8b3ddf",
+  "apiKey": "AIzaSyBpuAbhjYZzD7zKSOByz9VlLMPVTxurTgg",
+  "authDomain": "floraxionaromatics-e0b00.firebaseapp.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "floraxionaromatics-e0b00.firebasestorage.app",
+  "messagingSenderId": "300970204302",
+  "measurementId": "G-ZD9XYKB5DX",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }
