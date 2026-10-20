@@ -18,6 +18,33 @@ export interface AuthenticatedAdmin {
   createdAt?: string;
 }
 
+const STAFF_ROLES: StaffRole[] = [
+  'super_admin',
+  'catalogue_manager',
+  'order_manager',
+  'sales_manager',
+  'read_only',
+];
+const INVALID_ADMIN_ROLE_MESSAGE = 'Accès refusé : le rôle administrateur associé à ce compte est absent ou invalide.';
+
+function isStaffRole(role: unknown): role is StaffRole {
+  return typeof role === 'string' && STAFF_ROLES.includes(role as StaffRole);
+}
+
+function adminLookupErrorMessage(error: unknown): string {
+  const code = typeof error === 'object' && error !== null && 'code' in error
+    ? String((error as { code: unknown }).code)
+    : '';
+
+  if (code === 'permission-denied' || code === 'firestore/permission-denied') {
+    return 'Connexion réussie, mais la vérification des droits administrateur a été refusée par Firestore. Vérifiez la base de données et ses règles.';
+  }
+  if (code === 'unavailable' || code === 'firestore/unavailable') {
+    return 'Connexion réussie, mais Firestore est momentanément indisponible. Réessayez plus tard.';
+  }
+  return 'Connexion réussie, mais les droits administrateur n’ont pas pu être vérifiés. Vérifiez la configuration Firestore.';
+}
+
 interface AuthContextType {
   admin: AuthenticatedAdmin | null;
   firebaseUser: User | null;
@@ -50,6 +77,12 @@ export function translateAuthError(error: unknown): string {
         return 'Le format de l’adresse e-mail est invalide.';
       case 'auth/network-request-failed':
         return 'Connexion réseau impossible. Vérifiez votre connexion internet.';
+      case 'auth/operation-not-allowed':
+        return 'La connexion par e-mail et mot de passe est désactivée dans le projet Firebase utilisé par cette application.';
+      case 'auth/unauthorized-domain':
+        return 'Ce domaine n’est pas autorisé dans Firebase Authentication. Ajoutez le domaine de l’application aux domaines autorisés du projet utilisé.';
+      case 'auth/invalid-api-key':
+        return 'La clé de configuration Firebase est invalide. Vérifiez le projet Firebase configuré pour cette application.';
       default:
         return authErr.message || 'Une erreur d’authentification est survenue.';
     }
@@ -83,7 +116,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (adminSnap.exists()) {
           const data = adminSnap.data();
-          const verifiedRole = (data?.role as StaffRole) || 'read_only';
+          if (!isStaffRole(data?.role)) {
+            await signOut(auth);
+            throw new Error(INVALID_ADMIN_ROLE_MESSAGE);
+          }
+          const verifiedRole = data.role;
           setAdmin({
             uid: user.uid,
             email: user.email || '',
@@ -103,6 +140,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err) {
         console.error('Error verifying administrator role:', err);
         setAdmin(null);
+        setAuthError(err instanceof Error && err.message === INVALID_ADMIN_ROLE_MESSAGE
+          ? INVALID_ADMIN_ROLE_MESSAGE
+          : adminLookupErrorMessage(err));
       } finally {
         setIsLoading(false);
       }
@@ -131,7 +171,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Check admin privileges in Firestore
       const adminDocRef = doc(db, 'admins', user.uid);
-      const adminSnap = await getDoc(adminDocRef);
+      let adminSnap;
+      try {
+        adminSnap = await getDoc(adminDocRef);
+      } catch (err) {
+        await signOut(auth);
+        const msg = adminLookupErrorMessage(err);
+        setAuthError(msg);
+        throw new Error(msg);
+      }
 
       if (!adminSnap.exists()) {
         await signOut(auth);
@@ -141,11 +189,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const data = adminSnap.data();
+      if (!isStaffRole(data.role)) {
+        await signOut(auth);
+        const msg = INVALID_ADMIN_ROLE_MESSAGE;
+        setAuthError(msg);
+        throw new Error(msg);
+      }
       const verifiedAdmin: AuthenticatedAdmin = {
         uid: user.uid,
         email: user.email || trimmedEmail,
         displayName: data?.displayName || user.displayName || trimmedEmail.split('@')[0],
-        role: (data?.role as StaffRole) || 'read_only',
+        role: data.role,
         createdAt: data?.createdAt,
       };
 

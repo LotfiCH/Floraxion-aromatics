@@ -1,86 +1,48 @@
-# Floraxion Aromatics — Guide de Configuration Administrateur
+# Floraxion Aromatics — Configuration Firebase et accès administrateur
 
-Ce document détaille les instructions officielles et sécurisées pour configurer le premier administrateur autorisé de la plateforme Floraxion Aromatics.
+## Configuration utilisée par l’application
 
----
+Le fichier `firebase-applet-config.json` configure le projet Firebase `impactful-oarlock-jc70r`, son domaine d’authentification `impactful-oarlock-jc70r.firebaseapp.com` et la base Firestore nommée `ai-studio-floraxionaromati-dc0af519-35d8-448c-bb25-ff78caf4e69c`. Les valeurs de configuration client Firebase sont incluses dans le navigateur par conception. N’ajoutez jamais de clé privée de compte de service ou de secret Admin SDK dans ce fichier.
 
-## Architecture de Sécurité & Modèle de Confiance
+Avant toute modification dans la console, confirmez que le sélecteur de projet Firebase affiche exactement `impactful-oarlock-jc70r`. Le code seul ne peut pas confirmer l’état réel de la console.
 
-L'accès à l'espace d'administration (`/admin/*`) repose sur une double vérification stricte :
-1. **Authentification Réelle (Firebase Auth)** : Vérification de l'e-mail et du mot de passe avec échange de jetons chiffrés.
-2. **Autorisation RBAC (Firestore Rules & Collection `admins`)** :
-   - Un utilisateur authentifié dans Firebase Auth ne possède **AUCUN** droit d'accès au back-office tant que son identifiant unique (`UID`) n'est pas explicitement inscrit dans la collection Firestore `/admins/{uid}`.
-   - Les règles de sécurité Firestore bloquent toutes les écritures directes sur `/admins/{uid}` côté client (`allow write: if false;`).
-   - L'auto-attribution de privilèges ou la modification de rôle par un client est mathématiquement impossible.
+## Activer et vérifier la connexion par e-mail
 
----
+1. Dans Firebase Console, ouvrez **Authentication → Sign-in method** pour `impactful-oarlock-jc70r`.
+2. Activez **Email/Password** et enregistrez.
+3. Dans **Authentication → Settings → Authorized domains**, vérifiez que `localhost` et le domaine de production de l’application sont autorisés.
+4. Dans **Authentication → Users**, vérifiez que `chabou.lotfi@gmail.com` existe. Si ce compte n’existe pas, créez-le ici et transmettez son mot de passe à son titulaire par un canal sécurisé.
 
-## Méthode 1 : Configuration via la Console Firebase (Recommandée)
+`auth/operation-not-allowed` signifie que le fournisseur utilisé pour cette tentative n’est pas activé dans le projet qui a reçu la requête. Vérifiez le sélecteur de projet avant de modifier le fournisseur; l’erreur ne prouve pas à elle seule que le projet configuré est incorrect.
 
-### Étape 1 : Activer le fournisseur E-mail / Mot de passe
-1. Ouvrez votre [Console Firebase](https://console.firebase.google.com/) et sélectionnez le projet : `impactful-oarlock-jc70r`.
-2. Dans le menu de gauche, rendez-vous dans **Build** > **Authentication**.
-3. Cliquez sur l'onglet **Sign-in method** (Mode de connexion).
-4. Cliquez sur **Adresse e-mail/Mot de passe**, activez le premier commutateur (Activer) et cliquez sur **Enregistrer**.
+## Donner l’accès administrateur à l’UID prévu
 
-### Étape 2 : Créer le compte utilisateur administrateur
-1. Dans **Authentication**, rendez-vous sur l'onglet **Users** (Utilisateurs).
-2. Cliquez sur le bouton **Ajouter un utilisateur** (Add user).
-3. Saisissez :
-   - **Adresse e-mail** : votre adresse e-mail professionnelle (ex. `direction@floraxion.dz`).
-   - **Mot de passe** : un mot de passe robuste (ex. 12+ caractères).
-4. Cliquez sur **Ajouter un utilisateur**.
-5. **Important :** Copiez la valeur de la colonne **UID utilisateur** (une chaîne alphanumérique comme `V8aB29c...`).
+La connexion Firebase et l’autorisation admin sont deux vérifications différentes. Une connexion réussie ne donne pas l’accès au tableau de bord sans document `/admins/{uid}`.
 
-### Étape 3 : Assigner le rôle d'administrateur dans Firestore
-1. Dans le menu de gauche de la console Firebase, cliquez sur **Firestore Database**.
-2. Cliquez sur **Démarrer une collection** (ou sélectionnez la collection `admins` si elle existe déjà) :
-   - **ID de la collection** : `admins`
-   - Cliquez sur **Suivant**.
-3. Dans la boîte de dialogue d'ajout de document :
-   - **ID du document** : collez l'**UID utilisateur** copié à l'étape précédente (très important : l'ID du document doit être exactement l'UID du compte).
-   - Ajoutez les champs suivants :
-     - `uid` (type : `string`) = votre UID
-     - `email` (type : `string`) = `direction@floraxion.dz`
-     - `displayName` (type : `string`) = `Nour El Houda (Directrice)`
-     - `role` (type : `string`) = `super_admin` (ou `catalogue_manager`, `order_manager`, `sales_manager`)
-     - `createdAt` (type : `string`) = date/heure ISO (ex. `2026-10-20T12:00:00Z`)
-4. Cliquez sur **Enregistrer**.
+1. Dans **Authentication → Users**, ouvrez la fiche `chabou.lotfi@gmail.com` et copiez son UID.
+2. Dans **Firestore Database**, sélectionnez la base nommée `ai-studio-floraxionaromati-dc0af519-35d8-448c-bb25-ff78caf4e69c`.
+3. Ouvrez l’onglet **Rules** et publiez le contenu de `firestore.rules` sur cette base.
+4. Ouvrez **Data**, créez la collection `admins` si nécessaire, puis un document dont l’ID est exactement l’UID copié.
+5. Ajoutez les champs :
+   - `uid` (string) : UID copié
+   - `email` (string) : `chabou.lotfi@gmail.com`
+   - `displayName` (string) : nom de l’administrateur
+   - `role` (string) : `super_admin`
+   - `createdAt` (string) : date ISO, par exemple `2026-10-20T12:00:00Z`
+6. Vérifiez que l’adresse e-mail du document correspond au compte dont l’UID sert d’ID. Les écritures dans `/admins` sont bloquées depuis le navigateur; gérez cette collection uniquement via la console ou un environnement serveur/Admin SDK approuvé.
 
----
+## Tester localement
 
-## Méthode 2 : Provisionnement par Script Serveur (CLI)
+1. Lancez l’application avec `npm run dev`.
+2. Ouvrez `http://localhost:3000/admin`.
+3. Connectez-vous avec `chabou.lotfi@gmail.com` et le mot de passe créé dans Firebase Authentication.
+4. Confirmez l’ouverture de `/admin/dashboard`, puis déconnectez-vous et vérifiez qu’une ouverture directe du tableau de bord redirige vers `/admin`.
+5. Pour tester le refus, utilisez un compte de test authentifié qui n’a pas de document `/admins/{uid}`. Il doit être déconnecté et recevoir un message d’accès refusé.
 
-Si vous disposez d'un compte de service Firebase (`serviceAccountKey.json`) :
+Les tests locaux ne peuvent pas prouver que Firebase Console, Email/Password, le compte, les règles et le document administrateur sont configurés correctement. Il faut effectuer ces étapes avec le projet réel.
 
-1. Définissez la variable d'environnement :
-   ```bash
-   export GOOGLE_APPLICATION_CREDENTIALS="/chemin/vers/serviceAccountKey.json"
-   ```
-2. Exécutez le script d'initialisation :
-   ```bash
-   npx tsx scripts/setup-admin.ts direction@floraxion.dz "VotreMotDePasse" "Nour El Houda" super_admin
-   ```
-Le script crée automatiquement le compte dans Firebase Auth et enregistre les privilèges dans `/admins/{uid}`.
+## Limite actuelle des données du back-office
 
----
+Les produits, commandes, devis, paramètres de livraison et journaux de l’interface sont actuellement lus et écrits dans `localStorage` par `src/lib/storage.ts`. Ils ne sont pas enregistrés dans Firestore. Les règles de `firestore.rules` protègent les accès directs à Firestore lorsqu’elles sont publiées, mais elles ne peuvent pas protéger des données conservées dans le navigateur. Ne traitez donc pas les opérations du tableau de bord comme un back-office de production tant que ces écritures n’ont pas été migrées vers Firestore ou un backend avec contrôle d’accès serveur.
 
-## Rôles Disponibles
-
-| Rôle | Libellé | Permissions |
-| :--- | :--- | :--- |
-| `super_admin` | Directrice Générale / Admin Global | Accès total : Catalogue, Commandes, Devis, Tarifs Wilayas, Paramètres, Journal d'Audit. |
-| `catalogue_manager` | Responsable Catalogue | Gestion des fiches produits, variantes, stocks, photos et descriptions botaniques. |
-| `order_manager` | Gestionnaire Commandes | Validation des règlements, changement des statuts d'expédition. |
-| `sales_manager` | Conseiller Commercial B2B | Révision des devis en gros, application de remises et frais d'expédition. |
-| `read_only` | Auditeur Externe | Consultation intégrale sans droits de modification. |
-
----
-
-## Connexion au Back-Office
-
-Une fois le compte configuré :
-1. Rendez-vous sur l'URL dédiée : `http://localhost:3000/admin`.
-2. Saisissez votre adresse e-mail et votre mot de passe.
-3. Cliquez sur **Connexion au Back-Office**.
-4. Vous serez redirigé automatiquement vers `/admin/dashboard`.
+Les règles bloquent aussi les créations de commandes invitées et de devis directement depuis le navigateur. Avant de rendre ces flux persistants, ajoutez un endpoint serveur qui valide les produits, prix, totaux et champs reçus, puis écrit dans Firestore avec Admin SDK côté serveur. Ne rendez pas ces collections publiques en écriture pour faire disparaître une erreur de permission.

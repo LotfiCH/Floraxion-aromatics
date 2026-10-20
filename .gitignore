@@ -4,5 +4,21 @@ dist/
 coverage/
 .DS_Store
 *.log
+
+# Environment variables and secrets
 .env*
 !.env.example
+!.env.*.example
+
+# Firebase service-account credentials
+service-account*.json
+*-service-account*.json
+serviceAccountKey*.json
+
+# Private keys and certificates
+*.pem
+*.key
+
+# Local editor and operating-system files
+.vscode/
+.idea/

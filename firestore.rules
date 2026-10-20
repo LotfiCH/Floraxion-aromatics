@@ -6,8 +6,29 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
+    function hasAdminRecord() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function hasRole(role) {
+      return hasAdminRecord()
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role == role;
+    }
+
+    function canManageProducts() {
+      return hasRole('super_admin') || hasRole('catalogue_manager');
+    }
+
+    function canManageOrders() {
+      return hasRole('super_admin') || hasRole('order_manager');
+    }
+
+    function canManageQuotations() {
+      return hasRole('super_admin') || hasRole('sales_manager');
+    }
+
+    function isAdmin() {
+      return hasAdminRecord();
     }
 
     function isValidId(id) {
@@ -22,43 +43,54 @@ service cloud.firestore {
     // Admins collection: verified administrators only; writes blocked on client (managed via server/Admin SDK)
     match /admins/{adminId} {
       allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin()) && isValidId(adminId);
-      allow list: if isAdmin();
+      allow list: if hasRole('super_admin');
       allow write: if false;
     }
 
     // Products: public storefront read, verified admin write
     match /products/{productId} {
       allow read: if true;
-      allow write: if isAdmin() && isValidId(productId);
+      allow write: if canManageProducts() && isValidId(productId);
     }
 
     // Categories: public read, admin write
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if isAdmin() && isValidId(categoryId);
+      allow write: if canManageProducts() && isValidId(categoryId);
     }
 
-    // Orders: public create during checkout, admin read/update/delete
+    // Guest checkout is currently local-only. A future server endpoint must
+    // validate catalog prices and totals before it writes orders to Firestore.
     match /orders/{orderId} {
-      allow create: if isValidId(orderId);
-      allow read, update, delete: if isAdmin() && isValidId(orderId);
+      allow create: if (hasRole('super_admin') || hasRole('sales_manager'))
+        && isValidId(orderId)
+        && request.resource.data.id == orderId
+        && request.resource.data.fromQuotationId is string
+        && request.resource.data.status == 'confirmed'
+        && request.resource.data.paymentStatus == 'unpaid';
+      allow read, update, delete: if canManageOrders() && isValidId(orderId);
     }
 
-    // Quotations: public create for B2B requests, admin read/update/delete
+    // Public B2B submission must use a server endpoint with field validation.
     match /quotations/{quotationId} {
-      allow create: if isValidId(quotationId);
-      allow read, update, delete: if isAdmin() && isValidId(quotationId);
+      allow create: if false;
+      allow read, update, delete: if canManageQuotations() && isValidId(quotationId);
     }
 
-    // Settings: public read, admin write
+    // Settings can contain operational or payment configuration.
     match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isAdmin() && isValidId(settingId);
+      allow read: if isAdmin();
+      allow write: if hasRole('super_admin') && isValidId(settingId);
     }
 
-    // Audit logs: admin read and write
+    // Audit entries are immutable for clients.
     match /audit_logs/{logId} {
-      allow read, write: if isAdmin() && isValidId(logId);
+      allow read: if isAdmin() && isValidId(logId);
+      allow create: if (hasRole('super_admin')
+          || hasRole('catalogue_manager')
+          || hasRole('order_manager')
+          || hasRole('sales_manager'))
+        && isValidId(logId);
     }
   }
 }

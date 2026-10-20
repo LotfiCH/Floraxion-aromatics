@@ -1,160 +1,79 @@
 /**
- * Floraxion Aromatics - Administrator Account Provisioning Script
- * 
- * Usage:
- *   npx tsx scripts/setup-admin.ts <email> <password> [displayName] [role]
- * 
- * Example:
- *   npx tsx scripts/setup-admin.ts direction@floraxion.dz MonMotDePasseSecurise2026 "Nour El Houda" super_admin
+ * One-time provisioning of the explicitly designated initial administrator.
+ *
+ * Usage: npx tsx scripts/setup-admin.ts
+ * Requires Google Application Default Credentials with access to the configured
+ * Firebase project and named Firestore database. This script never creates an
+ * Auth user or changes a password.
  */
 
-import { initializeApp, cert, getApps, applicationDefault } from 'firebase-admin/app';
+import { initializeApp, applicationDefault, getApps } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
-import * as fs from 'fs';
-import * as path from 'path';
+import { createInterface } from 'node:readline/promises';
+import { stdin as input, stdout as output } from 'node:process';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
-// Load config
-const configPath = path.resolve(__dirname, '../firebase-applet-config.json');
-if (!fs.existsSync(configPath)) {
-  console.error('Error: firebase-applet-config.json not found in project root.');
-  process.exit(1);
+const INITIAL_ADMIN_EMAIL = 'chabou.lotfi@gmail.com';
+const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
+const config = JSON.parse(
+  await readFile(path.resolve(scriptDirectory, '../firebase-applet-config.json'), 'utf8')
+) as { projectId?: string; firestoreDatabaseId?: string };
+
+if (!config.projectId) {
+  throw new Error('firebase-applet-config.json must define projectId.');
 }
 
-const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-const projectId = config.projectId;
+const app = getApps().find(({ name }) => name === '[DEFAULT]') ?? initializeApp({
+  credential: applicationDefault(),
+  projectId: config.projectId,
+});
 
-const [email, password, displayName = 'Administrateur', role = 'super_admin'] = process.argv.slice(2);
-
-if (!email || !password) {
-  console.log(`
-Floraxion Aromatics - Admin Provisioning Utility
-------------------------------------------------
-Usage:
-  npx tsx scripts/setup-admin.ts <email> <password> [displayName] [role]
-
-Available Roles:
-  - super_admin        : Full control (products, orders, quotes, settings, audit)
-  - catalogue_manager  : Manage products, variants, botanical descriptions
-  - order_manager      : Manage and verify customer orders
-  - sales_manager      : Manage B2B quotations
-  - read_only          : Auditor and view-only permissions
-
-Example:
-  npx tsx scripts/setup-admin.ts direction@floraxion.dz MotDePasseSecurise2026 "Nour El Houda" super_admin
-`);
-  process.exit(0);
-}
-
-const VALID_ROLES = ['super_admin', 'catalogue_manager', 'order_manager', 'sales_manager', 'read_only'];
-if (!VALID_ROLES.includes(role)) {
-  console.error(`Error: Invalid role "${role}". Must be one of: ${VALID_ROLES.join(', ')}`);
-  process.exit(1);
-}
+const auth = getAuth(app);
+const db = config.firestoreDatabaseId
+  ? getFirestore(app, config.firestoreDatabaseId)
+  : getFirestore(app);
 
 async function run() {
-  console.log(`\nInitializing Firebase Admin SDK for project: ${projectId}...`);
-
-  let app;
-  const serviceAccountKeyPath = process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
+  const rl = createInterface({ input, output });
   try {
-    if (serviceAccountKeyPath && fs.existsSync(serviceAccountKeyPath)) {
-      app = initializeApp({
-        credential: cert(serviceAccountKeyPath),
-        projectId,
-      });
-    } else {
-      // Fallback to application default or project ID
-      app = initializeApp({
-        credential: applicationDefault(),
-        projectId,
-      });
+    const typedEmail = (await rl.question(
+      `To grant super_admin to ${INITIAL_ADMIN_EMAIL}, type that exact email: `
+    )).trim().toLowerCase();
+
+    if (typedEmail !== INITIAL_ADMIN_EMAIL) {
+      throw new Error('Confirmation did not match the designated administrator email. No changes were made.');
     }
-  } catch (err: any) {
-    console.warn(`\n[Notice] Standard GCP credentials not detected in environment (${err?.message}).`);
-    console.log(`
-To use this CLI script directly with Firebase Admin SDK:
-1. Go to Firebase Console -> Project Settings -> Service Accounts
-2. Click "Generate new private key"
-3. Set the environment variable:
-   export GOOGLE_APPLICATION_CREDENTIALS="/path/to/serviceAccountKey.json"
-4. Re-run:
-   npx tsx scripts/setup-admin.ts ${email} <password> "${displayName}" ${role}
 
-Alternatively, perform the one-time setup in the Firebase Console:
-1. In Firebase Console -> Authentication -> Users:
-   Click "Add user", enter:
-   - Email: ${email}
-   - Password: (your secure password)
-   Copy the generated UID.
-
-2. In Firebase Console -> Firestore Database:
-   Navigate to or start the "admins" collection.
-   Add a document with Document ID = <Copied UID>
-   Fields:
-   - uid (string): <Copied UID>
-   - email (string): "${email}"
-   - displayName (string): "${displayName}"
-   - role (string): "${role}"
-   - createdAt (string): "${new Date().toISOString()}"
-`);
-    process.exit(0);
-  }
-
-  const adminAuth = getAuth(app);
-  const adminDb = config.firestoreDatabaseId
-    ? getFirestore(app, config.firestoreDatabaseId)
-    : getFirestore(app);
-
-  let userRecord;
-  try {
-    userRecord = await adminAuth.getUserByEmail(email);
-    console.log(`User already exists in Firebase Auth (UID: ${userRecord.uid}). Updating credentials...`);
-    await adminAuth.updateUser(userRecord.uid, {
-      password,
-      displayName,
-    });
-  } catch (err: any) {
-    if (err.code === 'auth/user-not-found') {
-      console.log(`Creating new user account in Firebase Auth: ${email}...`);
-      userRecord = await adminAuth.createUser({
-        email,
-        password,
-        displayName,
-      });
-      console.log(`Created user with UID: ${userRecord.uid}`);
-    } else {
-      throw err;
+    const user = await auth.getUserByEmail(INITIAL_ADMIN_EMAIL);
+    if (user.email?.toLowerCase() !== INITIAL_ADMIN_EMAIL) {
+      throw new Error('Firebase Auth returned a different email. No changes were made.');
     }
+
+    const adminRef = db.collection('admins').doc(user.uid);
+    const existing = await adminRef.get();
+    if (existing.exists && existing.data()?.email?.toLowerCase() !== INITIAL_ADMIN_EMAIL) {
+      throw new Error('An admin record with this UID has a different email. Resolve it manually; no changes were made.');
+    }
+
+    await adminRef.set({
+      uid: user.uid,
+      email: INITIAL_ADMIN_EMAIL,
+      displayName: user.displayName || 'Administrateur Floraxion',
+      role: 'super_admin',
+      createdAt: existing.data()?.createdAt || new Date().toISOString(),
+    }, { merge: true });
+
+    console.log(`Granted super_admin to the existing Firebase Auth account in project ${config.projectId}.`);
+    console.log(`Firestore path: admins/${user.uid}`);
+  } finally {
+    rl.close();
   }
-
-  // Register or update administrator privileges in Firestore /admins/{uid}
-  console.log(`Granting verified role "${role}" in Firestore (/admins/${userRecord.uid})...`);
-  await adminDb.collection('admins').doc(userRecord.uid).set({
-    uid: userRecord.uid,
-    email,
-    displayName,
-    role,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  });
-
-  console.log(`
-===========================================================
- SUCCESS: Administrator Configured!
-===========================================================
- Email:        ${email}
- Display Name: ${displayName}
- Role:         ${role}
- Auth UID:     ${userRecord.uid}
- Firestore:    /admins/${userRecord.uid}
-===========================================================
-You can now log in at /admin with these credentials.
-`);
 }
 
-run().catch((err) => {
-  console.error('Failed to setup admin:', err);
-  process.exit(1);
+run().catch((error: unknown) => {
+  console.error('Admin provisioning failed:', error instanceof Error ? error.message : 'Unknown error.');
+  process.exitCode = 1;
 });
