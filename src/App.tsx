@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   AuditLogEntry,
   CartItem,
@@ -22,20 +23,22 @@ import { CheckoutView } from './components/checkout/CheckoutView';
 import { OrderConfirmationView } from './components/checkout/OrderConfirmationView';
 import { B2BQuoteView } from './components/quote/B2BQuoteView';
 import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminLogin } from './components/admin/AdminLogin';
+import { AdminProtectedRoute } from './components/admin/AdminProtectedRoute';
 import { AboutAndPoliciesView } from './components/storefront/AboutAndPolicies';
 import { ArrowRight, Sparkles, Building2, Droplets, ShieldCheck, Award, Leaf } from 'lucide-react';
 import { getDictionary } from './lib/i18n';
 
 export default function App() {
+  const navigate = useNavigate();
   const [locale, setLocale] = useState<Locale>('fr');
   const [activeView, setActiveView] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '').toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const viewParam = params.get('view')?.toLowerCase();
-      const pathname = window.location.pathname.toLowerCase();
-      const target = hash || viewParam || (pathname.includes('/admin') ? 'admin' : '');
-      if (['admin', 'b2b', 'shop', 'about', 'home'].includes(target)) {
+      const target = (hash || viewParam || '') as string;
+      if (['b2b', 'shop', 'about', 'home'].includes(target)) {
         return target;
       }
     }
@@ -76,18 +79,23 @@ export default function App() {
     document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
   }, [locale]);
 
-  // URL Hash & Query routing sync (e.g. #admin, ?view=admin, #shop, #home)
+  // URL Hash & Query routing sync (e.g. #shop, #b2b, #home, or legacy #admin)
   useEffect(() => {
     const handleLocationChange = () => {
       if (typeof window === 'undefined') return;
       const hash = window.location.hash.replace('#', '').toLowerCase();
       const params = new URLSearchParams(window.location.search);
       const viewParam = params.get('view')?.toLowerCase();
-      const pathname = window.location.pathname.toLowerCase();
 
-      const target = hash || viewParam || (pathname.includes('/admin') ? 'admin' : '');
-      if (['admin', 'b2b', 'shop', 'about', 'home'].includes(target)) {
-        setActiveView(target);
+      if (hash === 'admin' || viewParam === 'admin') {
+        window.history.replaceState(null, '', '/admin/dashboard');
+        navigate('/admin/dashboard', { replace: true });
+        return;
+      }
+
+      const target = hash || viewParam;
+      if (['b2b', 'shop', 'about', 'home'].includes(target || '')) {
+        setActiveView(target || 'home');
         window.scrollTo({ top: 0, behavior: 'instant' });
       }
     };
@@ -99,9 +107,13 @@ export default function App() {
       window.removeEventListener('hashchange', handleLocationChange);
       window.removeEventListener('popstate', handleLocationChange);
     };
-  }, []);
+  }, [navigate]);
 
   const navigateToView = (view: string) => {
+    if (view === 'admin') {
+      navigate('/admin/dashboard');
+      return;
+    }
     setActiveView(view);
     if (typeof window !== 'undefined') {
       window.location.hash = view;
@@ -201,7 +213,7 @@ export default function App() {
 
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  return (
+  const storefrontContent = (
     <div className="min-h-screen flex flex-col bg-[#F8F7F2] text-[#292D29]">
       {/* Global Navigation Top Bar */}
       <Header
@@ -529,21 +541,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW: ADMIN DASHBOARD */}
-        {activeView === 'admin' && (
-          <AdminDashboard
-            products={products}
-            orders={orders}
-            quotations={quotations}
-            shippingRules={shippingRules}
-            settings={settings}
-            auditLogs={auditLogs}
-            currentStaff={currentStaff}
-            locale={locale}
-            onRefreshData={refreshData}
-          />
-        )}
-
         {/* VIEWS: ABOUT & POLICIES */}
         {(activeView === 'about' ||
           activeView === 'shipping' ||
@@ -583,4 +580,35 @@ export default function App() {
       />
     </div>
   );
+
+  return (
+    <Routes>
+      {/* 1. Public Admin Login page for unauthenticated visitors */}
+      <Route path="/admin" element={<AdminLogin />} />
+
+      {/* 2. Protected Admin Dashboard & Dedicated Subroutes: /admin/dashboard, /admin/products, /admin/orders, /admin/quotes, /admin/settings, /admin/shipping, /admin/audit, /admin/csv */}
+      <Route
+        path="/admin/*"
+        element={
+          <AdminProtectedRoute>
+            <AdminDashboard
+              products={products}
+              orders={orders}
+              quotations={quotations}
+              shippingRules={shippingRules}
+              settings={settings}
+              auditLogs={auditLogs}
+              currentStaff={currentStaff}
+              locale={locale}
+              onRefreshData={refreshData}
+            />
+          </AdminProtectedRoute>
+        }
+      />
+
+      {/* 3. Public Storefront */}
+      <Route path="*" element={storefrontContent} />
+    </Routes>
+  );
 }
+

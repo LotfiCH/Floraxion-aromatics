@@ -1,4 +1,4 @@
-import { WilayaDeliveryRule } from '../types';
+import type { WilayaDeliveryRule } from '../types/index.ts';
 
 export const ALGERIA_WILAYAS: WilayaDeliveryRule[] = [
   { code: '01', nameFr: 'Adrar', nameAr: 'أدرار', zone: 4, feeDZD: 1200, estimatedTransitTime: '3 - 5 jours', cashOnDeliveryAllowed: true },

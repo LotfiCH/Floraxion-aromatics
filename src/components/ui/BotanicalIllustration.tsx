@@ -2,15 +2,23 @@ import React from 'react';
 
 interface BotanicalIllustrationProps {
   tag: string;
+  imageUrl?: string;
   className?: string;
   aspectRatio?: 'square' | 'wide' | 'portrait';
 }
 
 export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
   tag,
+  imageUrl,
   className = '',
   aspectRatio = 'square',
 }) => {
+  const [imageError, setImageError] = React.useState(false);
+
+  React.useEffect(() => {
+    setImageError(false);
+  }, [imageUrl]);
+
   const getTheme = () => {
     switch (tag) {
       case 'rosemary':
@@ -180,13 +188,23 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
         </div>
       </div>
 
-      {/* SVG Botanical Artwork */}
-      <svg
-        viewBox="0 0 240 240"
-        className="w-full h-full max-h-[82%] max-w-[82%] drop-shadow-md transition-transform duration-500 hover:scale-105"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
+      {/* Custom image or SVG Botanical Artwork */}
+      {imageUrl && !imageError ? (
+        <div className="relative z-10 w-full h-full max-h-[88%] max-w-[88%] flex items-center justify-center p-2">
+          <img
+            src={imageUrl}
+            alt={theme.label}
+            onError={() => setImageError(true)}
+            className="w-full h-full object-contain rounded-xs drop-shadow-md transition-transform duration-500 hover:scale-105"
+          />
+        </div>
+      ) : (
+        <svg
+          viewBox="0 0 240 240"
+          className="w-full h-full max-h-[82%] max-w-[82%] drop-shadow-md transition-transform duration-500 hover:scale-105"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
         {/* Soft shadow under the apothecary vessel */}
         <ellipse cx="120" cy="205" rx="42" ry="7" fill="rgba(0,0,0,0.12)" />
 
@@ -289,6 +307,7 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           </linearGradient>
         </defs>
       </svg>
+      )}
 
       {/* Verified Botanical Latin Kicker */}
       <div className="absolute bottom-2.5 inset-x-2 text-center pointer-events-none">

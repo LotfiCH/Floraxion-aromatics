@@ -1,6 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Locale } from '../../types';
 import { getDictionary } from '../../lib/i18n';
+import { useAuth } from '../../lib/auth';
 import { ShieldCheck } from 'lucide-react';
 
 interface FooterProps {
@@ -11,9 +13,15 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelectedCategory }) => {
   const t = getDictionary(locale);
+  const { admin } = useAuth();
+  const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
 
   const handleNav = (view: string, cat: string | null = null) => {
+    if (view === 'admin') {
+      navigate('/admin/dashboard');
+      return;
+    }
     setActiveView(view);
     setSelectedCategory(cat);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -73,15 +81,17 @@ export const Footer: React.FC<FooterProps> = ({ locale, setActiveView, setSelect
                   {t.nav.about}
                 </button>
               </li>
-              <li>
-                <button
-                  onClick={() => handleNav('admin')}
-                  className="hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 text-xs text-[#829477] hover:text-white pt-1"
-                >
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#829477]" />
-                  <span>{t.nav.admin} (Back-office)</span>
-                </button>
-              </li>
+              {admin && (
+                <li>
+                  <button
+                    onClick={() => handleNav('admin')}
+                    className="hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 text-xs text-[#829477] hover:text-white pt-1"
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#829477]" />
+                    <span>{t.nav.admin} (Back-office)</span>
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
 

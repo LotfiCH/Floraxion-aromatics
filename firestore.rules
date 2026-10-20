@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Admins collection: verified administrators only; writes blocked on client (managed via server/Admin SDK)
+    match /admins/{adminId} {
+      allow get: if isSignedIn() && (request.auth.uid == adminId || isAdmin()) && isValidId(adminId);
+      allow list: if isAdmin();
+      allow write: if false;
+    }
+
+    // Products: public storefront read, verified admin write
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(productId);
+    }
+
+    // Categories: public read, admin write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(categoryId);
+    }
+
+    // Orders: public create during checkout, admin read/update/delete
+    match /orders/{orderId} {
+      allow create: if isValidId(orderId);
+      allow read, update, delete: if isAdmin() && isValidId(orderId);
+    }
+
+    // Quotations: public create for B2B requests, admin read/update/delete
+    match /quotations/{quotationId} {
+      allow create: if isValidId(quotationId);
+      allow read, update, delete: if isAdmin() && isValidId(quotationId);
+    }
+
+    // Settings: public read, admin write
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(settingId);
+    }
+
+    // Audit logs: admin read and write
+    match /audit_logs/{logId} {
+      allow read, write: if isAdmin() && isValidId(logId);
+    }
+  }
+}

@@ -88,6 +88,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
             <div className="rounded-sm overflow-hidden border border-[#E3E5DF] shadow-sm bg-white">
               <BotanicalIllustration
                 tag={product.imageTag}
+                imageUrl={product.imageUrl}
                 aspectRatio="square"
                 className="w-full h-[400px] sm:h-[480px]"
               />

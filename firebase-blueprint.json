@@ -1,0 +1,126 @@
+{
+  "entities": {
+    "Admin": {
+      "title": "Admin",
+      "description": "Authorized administrator record for role-based access control",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["super_admin", "catalogue_manager", "order_manager", "sales_manager", "read_only"] },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Botanical and aromatic product in the catalogue",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sku": { "type": "string" },
+        "slug": { "type": "string" },
+        "categoryId": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+        "isFeatured": { "type": "boolean" },
+        "imageTag": { "type": "string" },
+        "imageUrl": { "type": "string" }
+      },
+      "required": ["id", "sku", "slug", "categoryId", "status", "isFeatured", "imageTag"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "Botanical product category",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "slug": { "type": "string" },
+        "sortOrder": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["id", "slug", "sortOrder", "isActive"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "paymentStatus": { "type": "string" },
+        "totalDZD": { "type": "number" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "orderNumber", "status", "paymentStatus", "totalDZD"]
+    },
+    "Quotation": {
+      "title": "Quotation",
+      "description": "Professional B2B quotation request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "quotationNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "totalDZD": { "type": "number" }
+      },
+      "required": ["id", "quotationNumber", "status"]
+    },
+    "SiteSettings": {
+      "title": "SiteSettings",
+      "description": "Store contact and payment gateway configurations",
+      "type": "object",
+      "properties": {
+        "storeName": { "type": "string" },
+        "companyName": { "type": "string" },
+        "freeShippingThresholdDZD": { "type": "number" }
+      },
+      "required": ["storeName", "companyName"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security log of administrative actions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "actor": { "type": "string" },
+        "role": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["id", "timestamp", "actor", "action"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "Admin" },
+      "description": "Authorized administrator whitelist verified by backend"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "Product" },
+      "description": "Botanical and aromatic catalogue items"
+    },
+    "/categories/{categoryId}": {
+      "schema": { "$ref": "Category" },
+      "description": "Catalogue categories"
+    },
+    "/orders/{orderId}": {
+      "schema": { "$ref": "Order" },
+      "description": "Retail orders"
+    },
+    "/quotations/{quotationId}": {
+      "schema": { "$ref": "Quotation" },
+      "description": "B2B quote requests"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "SiteSettings" },
+      "description": "Administrative store settings"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "AuditLog" },
+      "description": "Administrative audit trail"
+    }
+  }
+}

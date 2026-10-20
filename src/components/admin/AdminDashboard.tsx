@@ -13,9 +13,12 @@ import {
   StaffUser,
   WilayaDeliveryRule,
 } from '../../types';
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../lib/auth';
 import { getDictionary } from '../../lib/i18n';
 import { convertQuotationToOrder, formatDZD, validateOrderStatusTransition } from '../../lib/commerce';
-import { storage, STAFF_USERS } from '../../lib/storage';
+import { storage } from '../../lib/storage';
+import { ProductEditModal } from './ProductEditModal';
 import {
   ShieldAlert,
   Package,
@@ -32,6 +35,9 @@ import {
   Check,
   Building,
   UserCheck,
+  LogOut,
+  ArrowLeft,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -59,40 +65,73 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const t = getDictionary(locale);
 
-  // Active Admin Tab
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'products' | 'orders' | 'quotes' | 'shipping' | 'settings' | 'audit' | 'csv'
-  >('overview');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { admin, logout } = useAuth();
 
-  // Staff role switcher
-  const [selectedStaffId, setSelectedStaffId] = useState<string>(currentStaff.id);
-  const activeStaff = STAFF_USERS.find((s) => s.id === selectedStaffId) || currentStaff;
-
-  // Search & Filter States
+  // Dashboard component state
   const [productSearch, setProductSearch] = useState('');
-  const [productCatFilter, setProductCatFilter] = useState<string>('all');
-  const [orderStatusFilter, setOrderStatusFilter] = useState<string>('all');
-  const [quoteStatusFilter, setQuoteStatusFilter] = useState<string>('all');
-
-  // Modals / Inspector
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [selectedQuote, setSelectedQuote] = useState<Quotation | null>(null);
+  const [productCatFilter, setProductCatFilter] = useState('all');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [csvPreview, setCsvPreview] = useState<string | null>(null);
-  const [notification, setNotification] = useState<string | null>(null);
 
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+  const [quoteStatusFilter, setQuoteStatusFilter] = useState('all');
+  const [selectedQuote, setSelectedQuote] = useState<Quotation | null>(null);
+
+  const [csvPreview, setCsvPreview] = useState<string | null>(null);
+
+  const [notification, setNotification] = useState<string | null>(null);
   const showNotification = (msg: string) => {
     setNotification(msg);
-    setTimeout(() => setNotification(null), 3000);
+    setTimeout(() => setNotification(null), 4000);
   };
 
-  // Switch Staff Role
-  const handleStaffChange = (userId: string) => {
-    setSelectedStaffId(userId);
-    const user = STAFF_USERS.find((u) => u.id === userId);
-    if (user) {
-      storage.setCurrentStaff(user);
-      showNotification(`Connecté en tant que : ${user.name} (${user.role})`);
+  // Derive active tab directly from URL pathname
+  const getTabFromPath = (path: string) => {
+    if (path.includes('/admin/products')) return 'products';
+    if (path.includes('/admin/orders')) return 'orders';
+    if (path.includes('/admin/quotes')) return 'quotes';
+    if (path.includes('/admin/settings')) return 'settings';
+    if (path.includes('/admin/shipping')) return 'shipping';
+    if (path.includes('/admin/audit')) return 'audit';
+    if (path.includes('/admin/csv')) return 'csv';
+    return 'overview';
+  };
+
+  const activeTab = getTabFromPath(location.pathname);
+
+  const handleTabChange = (tab: string) => {
+    const routeMap: Record<string, string> = {
+      overview: '/admin/dashboard',
+      products: '/admin/products',
+      orders: '/admin/orders',
+      quotes: '/admin/quotes',
+      settings: '/admin/settings',
+      shipping: '/admin/shipping',
+      audit: '/admin/audit',
+      csv: '/admin/csv',
+    };
+    navigate(routeMap[tab] || '/admin/dashboard');
+  };
+
+  // Real verified staff user from Firebase Auth & Firestore RBAC
+  const activeStaff: StaffUser = admin
+    ? {
+        id: admin.uid,
+        name: admin.displayName,
+        email: admin.email,
+        role: admin.role,
+      }
+    : currentStaff;
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/admin', { replace: true });
+    } catch (err) {
+      console.error('Logout error:', err);
     }
   };
 
@@ -217,6 +256,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     showNotification(`Devis ${q.quotationNumber} mis à jour.`);
   };
 
+  // Product Save Operation
+  const handleSaveProduct = (updatedProduct: Product) => {
+    try {
+      storage.updateProduct(updatedProduct, activeStaff.name, activeStaff.role);
+      onRefreshData();
+      setEditingProduct(null);
+      showNotification(
+        `Produit « ${updatedProduct.translations?.fr?.name || updatedProduct.sku} » (${updatedProduct.sku}) enregistré avec succès.`
+      );
+    } catch (err: any) {
+      console.error('Erreur lors de la sauvegarde du produit:', err);
+      throw new Error(err?.message || 'Une erreur est survenue lors de l’enregistrement du produit.');
+    }
+  };
+
   // CSV Export
   const handleExportCSV = () => {
     const headers = ['SKU', 'Categorie', 'Nom_FR', 'Nom_AR', 'Nom_Botanique', 'Origine', 'Conditionnement', 'Prix_DZD', 'Stock'];
@@ -260,25 +314,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </h1>
           </div>
 
-          {/* Role / Staff Selector */}
-          <div className="flex items-center gap-3 bg-[#FAF9F5] p-2 border border-[#E3E5DF] rounded-xs">
-            <UserCheck className="w-4 h-4 text-[#244A3B]" />
-            <div className="text-start">
-              <span className="text-[10px] font-semibold text-[#6D746E] block">
-                {t.admin.roleBadge} :
-              </span>
-              <select
-                value={selectedStaffId}
-                onChange={(e) => handleStaffChange(e.target.value)}
-                className="bg-transparent text-xs font-bold text-[#244A3B] focus:outline-none cursor-pointer"
-              >
-                {STAFF_USERS.map((usr) => (
-                  <option key={usr.id} value={usr.id}>
-                    {usr.name} — {usr.role}
-                  </option>
-                ))}
-              </select>
+          {/* Authenticated Administrator Profile & Session Controls */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex items-center gap-2.5 bg-[#FAF9F5] py-1.5 px-3 border border-[#E3E5DF] rounded-xs shadow-2xs">
+              <div className="w-8 h-8 rounded-full bg-[#244A3B] text-white flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+                {activeStaff.name.charAt(0)}
+              </div>
+              <div className="text-start">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-bold text-[#244A3B] leading-tight">
+                    {activeStaff.name}
+                  </span>
+                  <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold rounded-xs uppercase">
+                    {activeStaff.role}
+                  </span>
+                </div>
+                <span className="text-[11px] text-[#6D746E] block font-mono">
+                  {activeStaff.email}
+                </span>
+              </div>
             </div>
+
+            <Link
+              to="/"
+              className="h-9 px-3 text-xs font-semibold rounded-xs border border-[#E3E5DF] bg-white hover:bg-[#FAF9F5] text-[#244A3B] transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+              title="Voir la boutique publique"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Boutique</span>
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="h-9 px-3 text-xs font-semibold rounded-xs border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+              title="Fermer la session administrateur"
+              data-testid="admin-logout-btn"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Déconnexion</span>
+            </button>
           </div>
         </div>
 
@@ -293,7 +367,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Navigation Tabs */}
         <div className="flex flex-wrap border-b border-[#E3E5DF] bg-white px-4 rounded-t-xs text-xs font-semibold gap-1">
           <button
-            onClick={() => setActiveTab('overview')}
+            onClick={() => handleTabChange('overview')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'overview'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -303,7 +377,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>{t.admin.kpis}</span>
           </button>
           <button
-            onClick={() => setActiveTab('products')}
+            onClick={() => handleTabChange('products')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'products'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -314,7 +388,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>{t.admin.productsTab}</span>
           </button>
           <button
-            onClick={() => setActiveTab('orders')}
+            onClick={() => handleTabChange('orders')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'orders'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -325,7 +399,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>{t.admin.ordersTab} ({orders.length})</span>
           </button>
           <button
-            onClick={() => setActiveTab('quotes')}
+            onClick={() => handleTabChange('quotes')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'quotes'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -336,7 +410,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>{t.admin.quotesTab} ({quotations.length})</span>
           </button>
           <button
-            onClick={() => setActiveTab('shipping')}
+            onClick={() => handleTabChange('shipping')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'shipping'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -347,7 +421,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>{t.admin.shippingTab}</span>
           </button>
           <button
-            onClick={() => setActiveTab('csv')}
+            onClick={() => handleTabChange('csv')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'csv'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -358,7 +432,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>{t.admin.csvTab}</span>
           </button>
           <button
-            onClick={() => setActiveTab('settings')}
+            onClick={() => handleTabChange('settings')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'settings'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -369,7 +443,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span>{t.admin.settingsTab}</span>
           </button>
           <button
-            onClick={() => setActiveTab('audit')}
+            onClick={() => handleTabChange('audit')}
             className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
               activeTab === 'audit'
                 ? 'border-[#244A3B] text-[#244A3B]'
@@ -478,7 +552,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <button
                           onClick={() => {
                             setSelectedOrder(o);
-                            setActiveTab('orders');
+                            handleTabChange('orders');
                           }}
                           className="text-[#244A3B] font-semibold hover:underline cursor-pointer"
                         >
@@ -577,8 +651,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </td>
                     <td className="py-3 px-4 text-end">
                       <button
+                        type="button"
                         onClick={() => setEditingProduct(p)}
                         className="text-[#244A3B] font-semibold hover:underline cursor-pointer"
+                        data-testid={`edit-product-${p.sku}`}
+                        aria-label={`Éditer ${p.translations.fr.name}`}
                       >
                         Éditer
                       </button>
@@ -757,7 +834,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       Articles commandés :
                     </h4>
                     <ul className="divide-y divide-[#E3E5DF] border border-[#E3E5DF] p-2 bg-[#FAF9F5] rounded-xs">
-                      {selectedOrder.items.map((it, idx) => (
+                      {selectedOrder.items.map((it: any, idx: number) => (
                         <li key={idx} className="py-2 flex justify-between">
                           <div>
                             <span className="font-bold text-[#292D29]">{it.productNameSnapshot}</span>
@@ -948,7 +1025,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#E3E5DF]">
-                      {selectedQuote.items.map((it) => (
+                      {selectedQuote.items.map((it: any) => (
                         <tr key={it.id}>
                           <td className="py-2 px-3 font-medium text-[#292D29]">
                             {it.productName}
@@ -977,7 +1054,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <button
                       onClick={() => {
                         const newPrices: Record<string, number> = {};
-                        selectedQuote.items.forEach((it) => {
+                        selectedQuote.items.forEach((it: any) => {
                           const input = document.getElementById(`price-${it.id}`) as HTMLInputElement;
                           if (input) newPrices[it.id] = Number(input.value) || 0;
                         });
@@ -1205,6 +1282,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* Product Edit Modal */}
+        {editingProduct && (
+          <ProductEditModal
+            product={editingProduct}
+            locale={locale}
+            activeStaff={activeStaff}
+            onClose={() => setEditingProduct(null)}
+            onSave={handleSaveProduct}
+          />
         )}
       </div>
     </div>

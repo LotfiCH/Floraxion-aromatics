@@ -184,3 +184,68 @@ test('catalogue contains exactly 10 extra virgin & aromatized olive oil products
     assert.ok((retailVariant.priceDZD ?? 0) > 1000, `${prod.id} price must be realistic DZD`);
   }
 });
+
+test('storage.updateProduct preserves SKU, updates fields, records audit log, and persists to storage', async () => {
+  // Set up mock localStorage
+  const memStore = new Map<string, string>();
+  (globalThis as any).window = globalThis;
+  (globalThis as any).localStorage = {
+    getItem: (key: string) => memStore.get(key) ?? null,
+    setItem: (key: string, val: string) => memStore.set(key, String(val)),
+    removeItem: (key: string) => memStore.delete(key),
+    clear: () => memStore.clear(),
+  };
+
+  const { storage } = await import('./storage.ts');
+  const products = storage.getProducts();
+  assert.ok(products.length >= 45, 'Initial product catalogue must be at least 45');
+
+  const target = products[0];
+  const originalSku = target.sku;
+  const originalId = target.id;
+
+  const updatedTarget = {
+    ...target,
+    translations: {
+      ...target.translations,
+      fr: { ...target.translations.fr, name: 'Huile Essentielle Romarin Bio Terroir Modifiée' },
+      ar: { ...target.translations.ar, name: 'زيت إكليل الجبل العضوي المعدل' },
+    },
+    imageUrl: 'data:image/jpeg;base64,/9j/4AAQSkZJRg==',
+    status: 'published' as const,
+    variants: target.variants.map((v, i) =>
+      i === 0 ? { ...v, priceDZD: 2200, stockQuantity: 95 } : v
+    ),
+  };
+
+  storage.updateProduct(updatedTarget, 'Dr. Amina Benali', 'super_admin');
+
+  // Verify in-memory persistence through getProducts
+  const refreshedProducts = storage.getProducts();
+  assert.equal(refreshedProducts.length, products.length, 'Product count must not change or duplicate');
+  
+  const saved = refreshedProducts.find((p) => p.id === originalId);
+  assert.ok(saved, 'Updated product must be found by original ID');
+  assert.equal(saved?.sku, originalSku, 'SKU must remain strictly unchanged');
+  assert.equal(saved?.translations.fr.name, 'Huile Essentielle Romarin Bio Terroir Modifiée');
+  assert.equal(saved?.translations.ar.name, 'زيت إكليل الجبل العضوي المعدل');
+  assert.equal(saved?.imageUrl, 'data:image/jpeg;base64,/9j/4AAQSkZJRg==');
+  assert.equal(saved?.variants[0].priceDZD, 2200);
+  assert.equal(saved?.variants[0].stockQuantity, 95);
+
+  // Verify audit log entry was created
+  const logs = storage.getAuditLogs();
+  const lastLog = logs[0];
+  assert.equal(lastLog.action, 'PRODUCT_UPDATED');
+  assert.equal(lastLog.actor, 'Dr. Amina Benali');
+  assert.equal(lastLog.entityId, originalId);
+
+  // Verify error when updating non-existent product
+  assert.throws(
+    () => {
+      storage.updateProduct({ ...updatedTarget, id: 'non-existent-id-999' });
+    },
+    { message: /introuvable dans le catalogue/ }
+  );
+});
+

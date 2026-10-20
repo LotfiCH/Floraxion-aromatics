@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Locale } from '../../types';
 import { getDictionary } from '../../lib/i18n';
+import { useAuth } from '../../lib/auth';
 import { ShoppingBag, Menu, X, ShieldCheck } from 'lucide-react';
 
 interface HeaderProps {
@@ -25,9 +27,16 @@ export const Header: React.FC<HeaderProps> = ({
   setSelectedCategory,
 }) => {
   const t = getDictionary(locale);
+  const { admin } = useAuth();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigateTo = (view: string, category: string | null = null) => {
+    if (view === 'admin') {
+      navigate('/admin/dashboard');
+      setMobileMenuOpen(false);
+      return;
+    }
     setActiveView(view);
     setSelectedCategory(category);
     setMobileMenuOpen(false);
@@ -112,20 +121,22 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </button>
 
-            {/* Admin Console Button (Height 36px / h-9) */}
-            <button
-              onClick={() => navigateTo('admin')}
-              className={`h-9 px-3 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 border shadow-2xs ${
-                activeView === 'admin'
-                  ? 'bg-[#244A3B] text-white border-[#244A3B]'
-                  : 'border-[#E3E5DF] bg-[#FAF9F5] hover:bg-white text-[#292D29] hover:text-[#244A3B] hover:border-[#244A3B]'
-              }`}
-              title="Console d’administration"
-              aria-label="Console d’administration"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{t.nav.admin}</span>
-            </button>
+            {/* Discreet Admin Console Button: ONLY displayed to verified authenticated administrators */}
+            {admin && (
+              <button
+                onClick={() => navigateTo('admin')}
+                className={`h-9 px-3 text-xs font-medium rounded-xs transition-colors cursor-pointer inline-flex items-center justify-center gap-1.5 shrink-0 border shadow-2xs ${
+                  activeView === 'admin'
+                    ? 'bg-[#244A3B] text-white border-[#244A3B]'
+                    : 'border-[#244A3B]/30 bg-[#244A3B]/5 hover:bg-[#244A3B] text-[#244A3B] hover:text-white'
+                }`}
+                title={`Administrateur : ${admin.displayName} (${admin.role})`}
+                aria-label="Console d’administration"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{t.nav.admin}</span>
+              </button>
+            )}
 
             {/* Cart Button (Height 36px / h-9, matching alignment) */}
             <button
@@ -202,16 +213,18 @@ export const Header: React.FC<HeaderProps> = ({
               {t.nav.about}
             </button>
 
-            {/* Admin Console */}
-            <button
-              onClick={() => navigateTo('admin')}
-              className={`text-start py-2 px-2 rounded-xs transition-colors flex items-center gap-2 pt-3 border-t border-[#E3E5DF] ${
-                activeView === 'admin' ? 'text-[#244A3B] font-semibold' : 'text-[#244A3B] hover:text-[#1C3A2E]'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4" />
-              <span>{t.nav.admin}</span>
-            </button>
+            {/* Admin Console: ONLY for authenticated administrators */}
+            {admin && (
+              <button
+                onClick={() => navigateTo('admin')}
+                className={`text-start py-2 px-2 rounded-xs transition-colors flex items-center gap-2 pt-3 border-t border-[#E3E5DF] ${
+                  activeView === 'admin' ? 'text-[#244A3B] font-semibold' : 'text-[#244A3B] hover:text-[#1C3A2E]'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>{t.nav.admin}</span>
+              </button>
+            )}
           </div>
         </div>
       )}

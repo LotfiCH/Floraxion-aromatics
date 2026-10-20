@@ -77,6 +77,7 @@ export interface Product {
     };
   };
   imageTag: string; // identifier for styled botanical illustration / visual container
+  imageUrl?: string; // custom uploaded or external image URL
   variants: ProductVariant[];
   documents: ProductDocument[];
   createdAt: string;
@@ -99,6 +100,7 @@ export interface CartItem {
   unitPriceDZD: number;
   quantity: number;
   imageTag: string;
+  imageUrl?: string;
   maxStock: number;
 }
 

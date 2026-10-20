@@ -31,6 +31,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div className="relative aspect-[4/3] overflow-hidden bg-white/40">
           <BotanicalIllustration
             tag={product.imageTag}
+            imageUrl={product.imageUrl}
             aspectRatio="square"
             className="w-full h-full"
           />

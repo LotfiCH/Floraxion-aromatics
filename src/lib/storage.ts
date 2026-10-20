@@ -1,4 +1,4 @@
-import {
+import type {
   AuditLogEntry,
   CartItem,
   Category,
@@ -9,9 +9,9 @@ import {
   StaffRole,
   StaffUser,
   WilayaDeliveryRule,
-} from '../types';
-import { CATEGORIES, INITIAL_PRODUCTS } from '../data/catalogue';
-import { ALGERIA_WILAYAS } from '../data/wilayas';
+} from '../types/index.ts';
+import { CATEGORIES, INITIAL_PRODUCTS } from '../data/catalogue.ts';
+import { ALGERIA_WILAYAS } from '../data/wilayas.ts';
 
 const STORAGE_KEYS = {
   PRODUCTS: 'flx_products_v1',
@@ -243,8 +243,13 @@ class StorageService {
     if (typeof window === 'undefined') return;
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch (e) {
+    } catch (e: any) {
       console.error('Storage write error:', e);
+      throw new Error(
+        e?.name === 'QuotaExceededError' || e?.code === 22
+          ? 'Quota de stockage local dépassé. Veuillez réduire la taille de l’image.'
+          : `Erreur d'écriture dans le stockage: ${e?.message || 'accès non autorisé'}`
+      );
     }
   }
 
@@ -256,7 +261,11 @@ class StorageService {
       const storedIds = new Set(stored.map((p) => p.id));
       const missingProducts = INITIAL_PRODUCTS.filter((p) => !storedIds.has(p.id));
       const merged = [...stored, ...missingProducts];
-      this.saveProducts(merged);
+      try {
+        this.saveProducts(merged);
+      } catch (e) {
+        console.warn('Initial seed save skipped:', e);
+      }
       return merged;
     }
     return stored;
@@ -264,6 +273,28 @@ class StorageService {
 
   saveProducts(products: Product[]): void {
     this.set(STORAGE_KEYS.PRODUCTS, products);
+  }
+
+  updateProduct(updated: Product, actorName: string = 'Staff', actorRole: StaffRole = 'super_admin'): void {
+    const products = this.getProducts();
+    const index = products.findIndex((p) => p.id === updated.id);
+    if (index === -1) {
+      throw new Error(`Produit avec l'identifiant ${updated.id} (${updated.sku}) introuvable dans le catalogue.`);
+    }
+    const updatedProducts = [...products];
+    updatedProducts[index] = {
+      ...updated,
+      updatedAt: new Date().toISOString(),
+    };
+    this.saveProducts(updatedProducts);
+    this.logAction({
+      actor: actorName,
+      role: actorRole,
+      action: 'PRODUCT_UPDATED',
+      entityType: 'product',
+      entityId: updated.id,
+      details: `Produit modifié : ${updated.translations?.fr?.name || updated.sku} [${updated.sku}]`,
+    });
   }
 
   getCategories(): Category[] {
