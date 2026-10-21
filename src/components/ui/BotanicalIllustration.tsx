@@ -5,6 +5,7 @@ interface BotanicalIllustrationProps {
   imageUrl?: string;
   className?: string;
   aspectRatio?: 'square' | 'wide' | 'portrait';
+  presentation?: 'default' | 'cart-thumbnail';
 }
 
 export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
@@ -12,6 +13,7 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
   imageUrl,
   className = '',
   aspectRatio = 'square',
+  presentation = 'default',
 }) => {
   const [imageError, setImageError] = React.useState(false);
 
@@ -168,10 +170,11 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
       : aspectRatio === 'portrait'
       ? 'aspect-[3/4]'
       : 'aspect-square';
+  const artworkPadding = presentation === 'cart-thumbnail' ? 'p-2' : 'p-6';
 
   return (
     <div
-      className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} flex items-center justify-center p-6 select-none ${ratioClass} ${className}`}
+      className={`relative overflow-hidden bg-gradient-to-br ${theme.bg} flex items-center justify-center ${artworkPadding} select-none ${ratioClass} ${className}`}
     >
       {/* Studio lighting radial vignette */}
       <div className="absolute inset-0 bg-radial from-white/30 via-transparent to-black/10 pointer-events-none" />

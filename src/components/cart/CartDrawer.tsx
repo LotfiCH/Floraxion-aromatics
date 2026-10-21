@@ -43,7 +43,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
       />
 
       <div className="fixed inset-y-0 end-0 max-w-full flex pl-10">
-        <div className="w-screen max-w-md bg-[#F8F7F2] shadow-2xl flex flex-col border-s border-[#E3E5DF]">
+        <div className="w-[calc(100vw-2.5rem)] sm:w-screen max-w-md bg-[#F8F7F2] shadow-2xl flex flex-col border-s border-[#E3E5DF]">
           {/* Header */}
           <div className="p-6 border-b border-[#E3E5DF] flex items-center justify-between bg-white/60">
             <h2 className="font-serif-botanical text-xl font-bold text-[#244A3B]">
@@ -97,7 +97,12 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div key={`${item.productId}-${item.variantId}`} className="py-4 flex gap-4">
                   {/* Thumbnail */}
                   <div className="w-18 h-18 shrink-0 rounded-xs overflow-hidden border border-[#E3E5DF]">
-                    <BotanicalIllustration tag={item.imageTag} imageUrl={item.imageUrl} className="w-full h-full p-1" />
+                    <BotanicalIllustration
+                      tag={item.imageTag}
+                      imageUrl={item.imageUrl}
+                      className="w-full h-full"
+                      presentation="cart-thumbnail"
+                    />
                   </div>
 
                   {/* Details */}
