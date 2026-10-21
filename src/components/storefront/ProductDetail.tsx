@@ -3,6 +3,7 @@ import { Locale, Product, ProductVariant } from '../../types';
 import { getDictionary } from '../../lib/i18n';
 import { formatDZD } from '../../lib/commerce';
 import { BotanicalIllustration } from '../ui/BotanicalIllustration';
+import { ProductBadgeLabel } from '../ui/ProductBadgeLabel';
 import {
   ArrowLeft,
   Check,
@@ -85,12 +86,17 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
           {/* Left: Gallery & Botanical Showcase */}
           <div className="lg:col-span-6 space-y-4">
-            <div className="rounded-sm overflow-hidden border border-[#E3E5DF] shadow-sm bg-white">
+            <div className="relative rounded-sm overflow-hidden border border-[#E3E5DF] shadow-sm bg-white">
               <BotanicalIllustration
                 tag={product.imageTag}
                 imageUrl={product.imageUrl}
                 aspectRatio="square"
                 className="w-full h-[400px] sm:h-[480px]"
+              />
+              <ProductBadgeLabel
+                value={product.productBadge}
+                locale={locale}
+                className="absolute left-3 top-3 z-20 rtl:left-auto rtl:right-3"
               />
             </div>
 
@@ -450,8 +456,14 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
                     }}
                     className="p-4 bg-white border border-[#E3E5DF] rounded-xs hover:border-[#244A3B] transition-all cursor-pointer flex gap-4 items-center"
                   >
-                    <div className="w-16 h-16 shrink-0 rounded-xs overflow-hidden border border-[#E3E5DF]">
+                    <div className="relative w-16 h-16 shrink-0 rounded-xs overflow-hidden border border-[#E3E5DF]">
                       <BotanicalIllustration tag={rel.imageTag} imageUrl={rel.imageUrl} className="w-full h-full p-1" />
+                      <ProductBadgeLabel
+                        value={rel.productBadge}
+                        locale={locale}
+                        compact
+                        className="absolute left-1 top-1 z-20 rtl:left-auto rtl:right-1"
+                      />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-[#292D29] truncate">

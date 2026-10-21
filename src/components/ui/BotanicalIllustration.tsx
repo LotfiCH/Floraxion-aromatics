@@ -3,6 +3,7 @@ import React from 'react';
 interface BotanicalIllustrationProps {
   tag: string;
   imageUrl?: string;
+  imageAlt?: string;
   className?: string;
   aspectRatio?: 'square' | 'wide' | 'portrait';
   presentation?: 'default' | 'cart-thumbnail';
@@ -11,6 +12,7 @@ interface BotanicalIllustrationProps {
 export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
   tag,
   imageUrl,
+  imageAlt,
   className = '',
   aspectRatio = 'square',
   presentation = 'default',
@@ -29,7 +31,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#244A3B',
           accentLight: '#829477',
           amberLiquid: '#B87333',
-          label: 'ROSMARINUS OFFICINALIS',
         };
       case 'lavender':
         return {
@@ -37,7 +38,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#4A4259',
           accentLight: '#8B849C',
           amberLiquid: '#B87333',
-          label: 'LAVANDULA ANGUSTIFOLIA',
         };
       case 'eucalyptus':
         return {
@@ -45,7 +45,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#2D4E41',
           accentLight: '#759082',
           amberLiquid: '#C2843B',
-          label: 'EUCALYPTUS GLOBULUS',
         };
       case 'cedarwood':
         return {
@@ -53,7 +52,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#543D2B',
           accentLight: '#947B65',
           amberLiquid: '#8C531B',
-          label: 'CEDRUS ATLANTICA',
         };
       case 'immortelle':
         return {
@@ -61,7 +59,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#917228',
           accentLight: '#D4AF37',
           amberLiquid: '#D99826',
-          label: 'HELICHRYSUM ITALICUM',
         };
       case 'carrier_oil':
         return {
@@ -69,7 +66,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#7A6038',
           accentLight: '#B89758',
           amberLiquid: '#E0A838',
-          label: 'OLEA VIRGO PURE',
         };
       case 'prickly_pear':
         return {
@@ -77,7 +73,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#3E5C3D',
           accentLight: '#7F9E7D',
           amberLiquid: '#B5A838',
-          label: 'OPUNTIA FICUS-INDICA',
         };
       case 'rose_water':
         return {
@@ -85,7 +80,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#8A4F5B',
           accentLight: '#C7909A',
           amberLiquid: '#F2C6CE',
-          label: 'ROSA DAMASCENA',
         };
       case 'orange_blossom':
         return {
@@ -93,7 +87,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#7A5E2E',
           accentLight: '#C9A35D',
           amberLiquid: '#F5DCB0',
-          label: 'CITRUS AURANTIUM FLOS',
         };
       case 'olive_oil':
         return {
@@ -101,7 +94,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#556B2F',
           accentLight: '#8F9754',
           amberLiquid: '#D4AF37',
-          label: 'OLEA EUROPAEA VIRGO EXTRA',
         };
       case 'olive_rosemary':
         return {
@@ -109,7 +101,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#3E5C38',
           accentLight: '#7E9B66',
           amberLiquid: '#CCA028',
-          label: 'OLEA & ROSMARINUS SILVESTRIS',
         };
       case 'olive_thyme':
         return {
@@ -117,7 +108,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#5E5232',
           accentLight: '#9E8D56',
           amberLiquid: '#CFA32B',
-          label: 'OLEA & THYMUS VULGARIS',
         };
       case 'olive_lemon':
         return {
@@ -125,7 +115,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#6E7029',
           accentLight: '#B5B84B',
           amberLiquid: '#E2B82E',
-          label: 'OLEA & CITRUS BERGAMIA',
         };
       case 'olive_chili':
         return {
@@ -133,7 +122,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#8C3B2B',
           accentLight: '#C2654D',
           amberLiquid: '#D66A2C',
-          label: 'OLEA & CAPSICUM ANNUUM',
         };
       case 'olive_garlic':
         return {
@@ -141,7 +129,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#544636',
           accentLight: '#8C7761',
           amberLiquid: '#CBA43D',
-          label: 'OLEA & ALLIUM SATIVUM',
         };
       case 'olive_basil':
         return {
@@ -149,7 +136,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#325838',
           accentLight: '#65966E',
           amberLiquid: '#C2AC30',
-          label: 'OLEA & OCIMUM BASILICUM',
         };
       default:
         return {
@@ -157,7 +143,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
           accent: '#244A3B',
           accentLight: '#829477',
           amberLiquid: '#B87333',
-          label: 'FLORAXION BOTANICA',
         };
     }
   };
@@ -179,24 +164,12 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
       {/* Studio lighting radial vignette */}
       <div className="absolute inset-0 bg-radial from-white/30 via-transparent to-black/10 pointer-events-none" />
 
-      {/* Subtle hairline measurement / botanical frame */}
-      <div className="absolute inset-3 border border-black/5 pointer-events-none flex flex-col justify-between p-2">
-        <div className="flex justify-between items-center text-[9px] tracking-widest text-[#292D29]/40 font-mono">
-          <span>ALGERIA N°35</span>
-          <span>LOT 2025</span>
-        </div>
-        <div className="flex justify-between items-center text-[8px] tracking-widest text-[#292D29]/40 font-mono">
-          <span>FLORAXION AROMATICS</span>
-          <span>100% PUR</span>
-        </div>
-      </div>
-
       {/* Custom image or SVG Botanical Artwork */}
       {imageUrl && !imageError ? (
-        <div className="relative z-10 w-full h-full max-h-[88%] max-w-[88%] flex items-center justify-center p-2">
+        <div className="relative z-10 w-full h-full max-h-full max-w-full flex items-center justify-center p-2">
           <img
             src={imageUrl}
-            alt={theme.label}
+            alt={imageAlt || tag}
             onError={() => setImageError(true)}
             className="w-full h-full object-contain rounded-xs drop-shadow-md transition-transform duration-500 hover:scale-105"
           />
@@ -204,9 +177,11 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
       ) : (
         <svg
           viewBox="0 0 240 240"
-          className="w-full h-full max-h-[82%] max-w-[82%] drop-shadow-md transition-transform duration-500 hover:scale-105"
+          className="w-full h-full max-h-[94%] max-w-[94%] drop-shadow-md transition-transform duration-500 hover:scale-105"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          role="img"
+          aria-label={imageAlt || tag}
         >
         {/* Soft shadow under the apothecary vessel */}
         <ellipse cx="120" cy="205" rx="42" ry="7" fill="rgba(0,0,0,0.12)" />
@@ -312,12 +287,6 @@ export const BotanicalIllustration: React.FC<BotanicalIllustrationProps> = ({
       </svg>
       )}
 
-      {/* Verified Botanical Latin Kicker */}
-      <div className="absolute bottom-2.5 inset-x-2 text-center pointer-events-none">
-        <span className="text-[9px] uppercase font-mono tracking-wider text-[#292D29]/75 bg-white/85 backdrop-blur-xs px-2.5 py-0.5 rounded-xs border border-black/5 shadow-2xs inline-block max-w-[90%] truncate">
-          {theme.label}
-        </span>
-      </div>
     </div>
   );
 };

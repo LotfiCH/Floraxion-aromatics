@@ -40,6 +40,8 @@ export interface ProductDocument {
   isPublic: boolean;
 }
 
+export type ProductBadge = 'new' | 'best_seller' | 'popular';
+
 export interface Product {
   id: string;
   sku: string;
@@ -47,6 +49,8 @@ export interface Product {
   categoryId: CategorySlug;
   status: 'draft' | 'published' | 'archived';
   isFeatured: boolean;
+  /** Editorial badge explicitly assigned by a catalogue administrator. */
+  productBadge?: ProductBadge;
   botanicalName?: string;
   origin?: string;
   extractionMethod?: {

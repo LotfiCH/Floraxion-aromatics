@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Product, ProductVariant, CategorySlug, Locale, StaffUser } from '../../types';
+import { Product, ProductVariant, ProductBadge, CategorySlug, Locale, StaffUser } from '../../types';
 import { BotanicalIllustration } from '../ui/BotanicalIllustration';
 import { createNewProductIdentity, createVariantSku, validateNewProductDraft } from '../../lib/productCreation';
 import {
@@ -510,7 +510,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
               )}
 
               {/* Status, Category & Visibility Strip */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-4 rounded-xs border border-[#E3E5DF]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white p-4 rounded-xs border border-[#E3E5DF]">
                 <div>
                   <label className="block text-xs font-semibold text-[#292D29] mb-1">
                     Statut de publication
@@ -543,6 +543,24 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                   {isNew && !isIdentityCustomized && (
                     <p className="mt-1 text-[10px] text-[#6D746E]">Le changement de famille adapte l’ID et le SKU générés; vous pourrez ensuite modifier le SKU.</p>
                   )}
+                </div>
+
+                <div>
+                  <label htmlFor="product-badge" className="block text-xs font-semibold text-[#292D29] mb-1">
+                    Badge produit
+                  </label>
+                  <select
+                    id="product-badge"
+                    value={draft.productBadge || ''}
+                    onChange={(e) => setDraft({ ...draft, productBadge: (e.target.value || undefined) as ProductBadge | undefined })}
+                    className="w-full py-1.5 px-3 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs text-[#292D29] focus:border-[#244A3B] focus:outline-none"
+                  >
+                    <option value="">Aucun badge</option>
+                    <option value="new">Nouveau</option>
+                    <option value="best_seller">Meilleure vente</option>
+                    <option value="popular">Populaire</option>
+                  </select>
+                  <p className="mt-1 text-[10px] text-[#6D746E]">Attribution éditoriale explicite. Aucun badge ni classement n’est calculé automatiquement.</p>
                 </div>
 
                 <div className="flex items-end pb-1">

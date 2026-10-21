@@ -1,6 +1,7 @@
 import {
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDocFromServer,
   getDocs,
@@ -101,7 +102,11 @@ export async function createProduct(product: Product): Promise<void> {
 
 export async function updateProduct(product: Product): Promise<void> {
   await requireCatalogueAdmin();
-  await updateDoc(doc(db, 'products', product.id), productDocument(product));
+  const serialized = productDocument(product);
+  await updateDoc(doc(db, 'products', product.id), {
+    ...serialized,
+    ...(product.productBadge ? {} : { productBadge: deleteField() }),
+  });
 }
 
 export async function deleteProduct(productId: string): Promise<void> {

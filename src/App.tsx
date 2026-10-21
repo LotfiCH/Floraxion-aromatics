@@ -265,6 +265,9 @@ export default function App() {
             {/* Hero Section */}
             <Hero
               locale={locale}
+              products={products}
+              productsLoading={productsLoading}
+              onSelectProduct={handleSelectProduct}
               onExplore={() => {
                 setSelectedCategory(null);
                 setActiveView('shop');

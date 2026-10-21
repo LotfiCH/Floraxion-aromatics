@@ -2,6 +2,7 @@ import React from 'react';
 import { Locale, Product } from '../../types';
 import { formatDZD } from '../../lib/commerce';
 import { BotanicalIllustration } from '../ui/BotanicalIllustration';
+import { ProductBadgeLabel } from '../ui/ProductBadgeLabel';
 import { Eye, Plus } from 'lucide-react';
 
 interface ProductCardProps {
@@ -34,6 +35,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             imageUrl={product.imageUrl}
             aspectRatio="square"
             className="w-full h-full"
+          />
+          <ProductBadgeLabel
+            value={product.productBadge}
+            locale={locale}
+            className="absolute left-3 top-3 z-30 rtl:left-auto rtl:right-3"
           />
 
           {/* Quick action overlay on hover */}
