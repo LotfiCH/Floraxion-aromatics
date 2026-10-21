@@ -23,6 +23,12 @@ if (existingDefaultApp && (
 
 export const app = existingDefaultApp ?? initializeApp(firebaseConfig);
 
+// Temporary, credential-free diagnostics for the catalogue permission investigation.
+console.info('[Firebase diagnostics] app initialized', {
+  projectId: app.options.projectId,
+  firestoreDatabaseId: firebaseConfig.firestoreDatabaseId || '(default)',
+});
+
 // Initialize Firebase Authentication
 export const auth = getAuth(app);
 

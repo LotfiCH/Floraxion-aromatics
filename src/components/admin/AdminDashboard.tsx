@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   AuditLogEntry,
   CategorySlug,
@@ -18,7 +18,11 @@ import { useAuth } from '../../lib/auth';
 import { getDictionary } from '../../lib/i18n';
 import { convertQuotationToOrder, formatDZD, validateOrderStatusTransition } from '../../lib/commerce';
 import { storage } from '../../lib/storage';
+import { applyCatalogueCsvImport, createProduct, deleteProduct, migrateMissingProducts, previewProductMigration, updateProduct, type ProductMigrationPreview } from '../../lib/products';
+import { planCatalogueCsvImport, serializeCatalogueCsv, type CsvImportPreview } from '../../lib/catalogueCsv';
 import { ProductEditModal } from './ProductEditModal';
+import { AdminTeamManagement } from './AdminTeamManagement';
+import { getAllowedAdminSections, getDefaultAdminSection, type AdminSection } from '../../lib/adminAccess';
 import {
   ShieldAlert,
   Package,
@@ -31,6 +35,8 @@ import {
   AlertTriangle,
   Upload,
   Download,
+  Copy,
+  Trash2,
   Search,
   Check,
   Building,
@@ -38,6 +44,7 @@ import {
   LogOut,
   ArrowLeft,
   ShieldCheck,
+  Users,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -49,6 +56,8 @@ interface AdminDashboardProps {
   auditLogs: AuditLogEntry[];
   currentStaff: StaffUser;
   locale: Locale;
+  productsError: string | null;
+  productsLoading: boolean;
   onRefreshData: () => void;
 }
 
@@ -61,6 +70,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   auditLogs,
   currentStaff,
   locale,
+  productsError,
+  productsLoading,
   onRefreshData,
 }) => {
   const t = getDictionary(locale);
@@ -73,6 +84,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [productSearch, setProductSearch] = useState('');
   const [productCatFilter, setProductCatFilter] = useState('all');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isCreatingProduct, setIsCreatingProduct] = useState(false);
+  const [migrationPreview, setMigrationPreview] = useState<ProductMigrationPreview | null>(null);
+  const [migrationProducts, setMigrationProducts] = useState<Product[]>([]);
+  const [migrationSource, setMigrationSource] = useState<'localStorage' | 'bundled' | null>(null);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -80,7 +96,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [quoteStatusFilter, setQuoteStatusFilter] = useState('all');
   const [selectedQuote, setSelectedQuote] = useState<Quotation | null>(null);
 
-  const [csvPreview, setCsvPreview] = useState<string | null>(null);
+  const [csvPreview, setCsvPreview] = useState<CsvImportPreview | null>(null);
+  const [isCsvImporting, setIsCsvImporting] = useState(false);
+  const [csvImportReport, setCsvImportReport] = useState<string | null>(null);
 
   const [notification, setNotification] = useState<string | null>(null);
   const showNotification = (msg: string) => {
@@ -89,7 +107,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Derive active tab directly from URL pathname
-  const getTabFromPath = (path: string) => {
+  const getTabFromPath = (path: string): AdminSection => {
     if (path.includes('/admin/products')) return 'products';
     if (path.includes('/admin/orders')) return 'orders';
     if (path.includes('/admin/quotes')) return 'quotes';
@@ -97,13 +115,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     if (path.includes('/admin/shipping')) return 'shipping';
     if (path.includes('/admin/audit')) return 'audit';
     if (path.includes('/admin/csv')) return 'csv';
+    if (path.includes('/admin/team')) return 'team';
     return 'overview';
   };
 
-  const activeTab = getTabFromPath(location.pathname);
+  const requestedTab = getTabFromPath(location.pathname);
+  const allowedSections = admin ? getAllowedAdminSections(admin.role) : [];
+  const activeTab = allowedSections.includes(requestedTab)
+    ? requestedTab
+    : admin ? getDefaultAdminSection(admin.role) : 'overview';
+  const isSuperAdmin = admin?.role === 'super_admin';
 
-  const handleTabChange = (tab: string) => {
-    const routeMap: Record<string, string> = {
+  const routeMap: Record<AdminSection, string> = {
       overview: '/admin/dashboard',
       products: '/admin/products',
       orders: '/admin/orders',
@@ -112,8 +135,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       shipping: '/admin/shipping',
       audit: '/admin/audit',
       csv: '/admin/csv',
-    };
-    navigate(routeMap[tab] || '/admin/dashboard');
+      team: '/admin/team',
+  };
+
+  useEffect(() => {
+    if (activeTab !== requestedTab) {
+      navigate(routeMap[activeTab], { replace: true });
+    }
+  }, [activeTab, navigate, requestedTab]);
+
+  const handleTabChange = (tab: AdminSection) => {
+    if (allowedSections.includes(tab)) navigate(routeMap[tab]);
   };
 
   // Real verified staff user from Firebase Auth & Firestore RBAC
@@ -125,6 +157,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         role: admin.role,
       }
     : currentStaff;
+  const canManageCatalogue = admin?.role === 'super_admin' || admin?.role === 'catalogue_manager';
 
   const handleLogout = async () => {
     try {
@@ -257,13 +290,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   // Product Save Operation
-  const handleSaveProduct = (updatedProduct: Product) => {
+  const handleSaveProduct = async (updatedProduct: Product) => {
     try {
-      storage.updateProduct(updatedProduct, activeStaff.name, activeStaff.role);
+      const productToSave = { ...updatedProduct, updatedAt: new Date().toISOString() };
+      if (isCreatingProduct) await createProduct(productToSave);
+      else await updateProduct(productToSave);
       onRefreshData();
       setEditingProduct(null);
+      setIsCreatingProduct(false);
       showNotification(
-        `Produit « ${updatedProduct.translations?.fr?.name || updatedProduct.sku} » (${updatedProduct.sku}) enregistré avec succès.`
+        `Produit « ${productToSave.translations?.fr?.name || productToSave.sku} » (${productToSave.sku}) enregistré avec succès.`
       );
     } catch (err: any) {
       console.error('Erreur lors de la sauvegarde du produit:', err);
@@ -271,24 +307,77 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const handleDeleteProduct = async (product: Product) => {
+    if (!window.confirm(`Supprimer définitivement « ${product.translations.fr.name} » du catalogue partagé ?`)) return;
+    try {
+      await deleteProduct(product.id);
+      showNotification(`Produit ${product.sku} supprimé du catalogue partagé.`);
+    } catch (err: any) {
+      showNotification(err?.message || 'La suppression du produit a échoué.');
+    }
+  };
+
+  const handleDuplicateProduct = (source: Product) => {
+    const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+    const id = `product-${token}`;
+    const sku = `${source.sku.slice(0, 48)}-COPY-${token.toUpperCase()}`;
+    const now = new Date().toISOString();
+    const draft: Product = {
+      ...JSON.parse(JSON.stringify(source)),
+      id,
+      sku,
+      slug: `${source.slug.slice(0, 80)}-copy-${token}`,
+      status: 'draft',
+      isFeatured: false,
+      translations: {
+        fr: { ...source.translations.fr, name: `${source.translations.fr.name} (copie)` },
+        ar: { ...source.translations.ar, name: `${source.translations.ar.name} (نسخة)` },
+      },
+      variants: source.variants.map((variant, index) => ({
+        ...variant,
+        id: `${id}-variant-${index + 1}`,
+        productId: id,
+        sku: `${sku}-${index + 1}`,
+      })),
+      documents: source.documents.map((document, index) => ({ ...document, id: `${id}-document-${index + 1}` })),
+      createdAt: now,
+      updatedAt: now,
+    };
+    setIsCreatingProduct(true);
+    setEditingProduct(draft);
+  };
+
+  const handlePreviewMigration = async () => {
+    try {
+      const legacy = storage.getProductsForMigration();
+      const preview = await previewProductMigration(legacy.products);
+      setMigrationProducts(legacy.products);
+      setMigrationSource(legacy.source);
+      setMigrationPreview(preview);
+    } catch (err: any) {
+      showNotification(err?.message || 'Impossible de préparer l’aperçu de migration.');
+    }
+  };
+
+  const handleConfirmMigration = async () => {
+    if (!migrationPreview || migrationPreview.oversizedIds.length > 0) return;
+    const importCount = migrationPreview.candidates.length;
+    if (!window.confirm(`Ajouter ${importCount} produit(s) qui n’existent pas encore dans Firestore ? Les documents existants seront ignorés et aucune donnée locale ne sera supprimée.`)) return;
+    setIsMigrating(true);
+    try {
+      const result = await migrateMissingProducts(migrationPreview.candidates);
+      setMigrationPreview(null);
+      showNotification(`Migration terminée : ${result.created} créé(s), ${result.skipped} ignoré(s) car déjà présents.`);
+    } catch (err: any) {
+      showNotification(err?.message || 'La migration a échoué. Les documents déjà créés restent dans Firestore.');
+    } finally {
+      setIsMigrating(false);
+    }
+  };
+
   // CSV Export
   const handleExportCSV = () => {
-    const headers = ['SKU', 'Categorie', 'Nom_FR', 'Nom_AR', 'Nom_Botanique', 'Origine', 'Conditionnement', 'Prix_DZD', 'Stock'];
-    const rows = products.flatMap((p) =>
-      p.variants.map((v) => [
-        v.sku,
-        p.categoryId,
-        `"${p.translations.fr.name.replace(/"/g, '""')}"`,
-        `"${p.translations.ar.name.replace(/"/g, '""')}"`,
-        `"${(p.botanicalName || '').replace(/"/g, '""')}"`,
-        `"${(p.origin || '').replace(/"/g, '""')}"`,
-        `"${v.sizeValue} ${v.sizeUnit}"`,
-        v.priceDZD ?? '',
-        v.stockQuantity,
-      ])
-    );
-
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const csvContent = serializeCatalogueCsv(products);
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -298,6 +387,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     link.click();
     document.body.removeChild(link);
     showNotification('Export CSV du catalogue téléchargé.');
+  };
+
+  const handleApplyCsvImport = async () => {
+    if (!csvPreview || isCsvImporting) return;
+    const eligible = csvPreview.creates.length + csvPreview.updates.length;
+    if (!eligible || !window.confirm(`Appliquer ${csvPreview.creates.length} création(s) et ${csvPreview.updates.length} mise(s) à jour dans Firestore ? Les champs absents ou vides sont conservés; aucun produit ne sera supprimé.`)) return;
+    setIsCsvImporting(true);
+    setCsvImportReport(null);
+    try {
+      const result = await applyCatalogueCsvImport(csvPreview);
+      onRefreshData();
+      const summary = `Import terminé : ${result.created.length} créé(s), ${result.updated.length} mis à jour, ${result.unchanged} inchangé(s), ${result.duplicates} doublon(s), ${result.validationErrors} erreur(s) de validation, ${result.failed.length} échec(s) d’écriture.`;
+      setCsvImportReport(result.failed.length ? `${summary} Échecs : ${result.failed.map((item) => `${item.productId} (${item.message})`).join('; ')}` : summary);
+      setCsvPreview(null);
+      showNotification('Import CSV terminé. Consultez le rapport détaillé.');
+    } catch (error) {
+      setCsvImportReport(`Import interrompu : ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsCsvImporting(false);
+    }
   };
 
   return (
@@ -366,93 +475,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
         {/* Navigation Tabs */}
         <div className="flex flex-wrap border-b border-[#E3E5DF] bg-white px-4 rounded-t-xs text-xs font-semibold gap-1">
-          <button
-            onClick={() => handleTabChange('overview')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'overview'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <span>{t.admin.kpis}</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('products')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'products'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <Package className="w-4 h-4" />
-            <span>{t.admin.productsTab}</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('orders')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'orders'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <ShoppingCart className="w-4 h-4" />
-            <span>{t.admin.ordersTab} ({orders.length})</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('quotes')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'quotes'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>{t.admin.quotesTab} ({quotations.length})</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('shipping')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'shipping'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <Truck className="w-4 h-4" />
-            <span>{t.admin.shippingTab}</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('csv')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'csv'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <Upload className="w-4 h-4" />
-            <span>{t.admin.csvTab}</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('settings')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'settings'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <Settings className="w-4 h-4" />
-            <span>{t.admin.settingsTab}</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('audit')}
-            className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
-              activeTab === 'audit'
-                ? 'border-[#244A3B] text-[#244A3B]'
-                : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
-            }`}
-          >
-            <History className="w-4 h-4" />
-            <span>{t.admin.auditTab}</span>
-          </button>
+          {([
+            { section: 'overview', label: t.admin.kpis, Icon: null },
+            { section: 'products', label: t.admin.productsTab, Icon: Package },
+            { section: 'orders', label: `${t.admin.ordersTab} (${orders.length})`, Icon: ShoppingCart },
+            { section: 'quotes', label: `${t.admin.quotesTab} (${quotations.length})`, Icon: FileText },
+            { section: 'shipping', label: t.admin.shippingTab, Icon: Truck },
+            { section: 'csv', label: t.admin.csvTab, Icon: Upload },
+            { section: 'settings', label: t.admin.settingsTab, Icon: Settings },
+            { section: 'audit', label: t.admin.auditTab, Icon: History },
+            { section: 'team', label: locale === 'ar' ? 'إدارة الفريق' : 'Gestion de l’équipe', Icon: Users },
+          ] as Array<{ section: AdminSection; label: string; Icon: React.ComponentType<{ className?: string }> | null }>)
+            .filter(({ section }) => allowedSections.includes(section)).map(({ section, label, Icon }) => (
+              <button
+                key={section}
+                type="button"
+                onClick={() => handleTabChange(section)}
+                aria-current={activeTab === section ? 'page' : undefined}
+                className={`py-3.5 px-4 cursor-pointer border-b-2 transition-colors flex items-center gap-1.5 ${
+                  activeTab === section
+                    ? 'border-[#244A3B] text-[#244A3B]'
+                    : 'border-transparent text-[#6D746E] hover:text-[#292D29]'
+                }`}
+              >
+                {Icon && <Icon className="w-4 h-4" />}
+                <span>{label}</span>
+              </button>
+            ))}
         </div>
 
         {/* Tab 1: Overview KPIs */}
@@ -570,6 +619,34 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Tab 2: Products Manager */}
         {activeTab === 'products' && (
           <div className="bg-white p-6 border border-[#E3E5DF] rounded-xs shadow-xs space-y-4">
+            {productsError && <div role="alert" className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs">{productsError}</div>}
+            {productsLoading && <div role="status" className="p-3 bg-[#EAE8D9] text-[#244A3B] text-xs">Chargement du catalogue Firestore…</div>}
+            {canManageCatalogue && (
+              <section className="p-4 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs space-y-3" aria-label="Migration catalogue local">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-sm font-bold text-[#244A3B]">Importer l’ancien catalogue local</h2>
+                    <p className="text-xs text-[#6D746E] mt-1">L’aperçu compare les identifiants. L’import crée uniquement les produits absents et ne supprime ni ne remplace aucune donnée.</p>
+                  </div>
+                  <button type="button" onClick={handlePreviewMigration} className="px-3 py-2 bg-white border border-[#E3E5DF] text-[#244A3B] text-xs font-semibold rounded-xs hover:bg-[#F4F1E8]">
+                    Prévisualiser l’import
+                  </button>
+                </div>
+                {migrationPreview && (
+                  <div className="space-y-2 text-xs text-[#292D29]" aria-live="polite">
+                    <p>Source : {migrationSource === 'localStorage' ? 'catalogue sauvegardé dans ce navigateur' : 'catalogue initial intégré à l’application'} · {migrationProducts.length} produits trouvés · {migrationPreview.candidates.length} à ajouter · {migrationPreview.existingIds.length} identifiants déjà présents (ignorés).</p>
+                    {migrationPreview.duplicateLocalIds.length > 0 && <p className="text-amber-800">Identifiants dupliqués localement, ignorés : {migrationPreview.duplicateLocalIds.join(', ')}</p>}
+                    {migrationPreview.oversizedIds.length > 0 && <p className="text-rose-800">Produits trop volumineux pour Firestore : {migrationPreview.oversizedIds.join(', ')}. Hébergez leurs images puis relancez l’aperçu.</p>}
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={isMigrating || migrationPreview.oversizedIds.length > 0 || migrationPreview.candidates.length === 0} onClick={handleConfirmMigration} className="px-3 py-2 bg-[#244A3B] text-white text-xs font-semibold rounded-xs disabled:opacity-50">
+                        {isMigrating ? 'Import en cours…' : `Confirmer l’ajout de ${migrationPreview.candidates.length} produit(s)`}
+                      </button>
+                      <button type="button" onClick={() => setMigrationPreview(null)} className="px-3 py-2 border border-[#E3E5DF] text-xs rounded-xs">Annuler l’aperçu</button>
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 <div className="relative">
@@ -650,15 +727,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </span>
                     </td>
                     <td className="py-3 px-4 text-end">
-                      <button
-                        type="button"
-                        onClick={() => setEditingProduct(p)}
-                        className="text-[#244A3B] font-semibold hover:underline cursor-pointer"
-                        data-testid={`edit-product-${p.sku}`}
-                        aria-label={`Éditer ${p.translations.fr.name}`}
-                      >
-                        Éditer
-                      </button>
+                      <div className="inline-flex items-center gap-3">
+                        {canManageCatalogue && <>
+                          <button type="button" onClick={() => { setIsCreatingProduct(false); setEditingProduct(p); }} className="text-[#244A3B] font-semibold hover:underline cursor-pointer" data-testid={`edit-product-${p.sku}`} aria-label={`Éditer ${p.translations.fr.name}`}>Éditer</button>
+                          <button type="button" onClick={() => handleDuplicateProduct(p)} className="text-[#244A3B] hover:underline cursor-pointer inline-flex items-center gap-1" aria-label={`Créer une copie de ${p.translations.fr.name}`}><Copy className="w-3.5 h-3.5"/>Copier</button>
+                          <button type="button" onClick={() => handleDeleteProduct(p)} className="text-rose-700 hover:underline cursor-pointer inline-flex items-center gap-1" aria-label={`Supprimer ${p.translations.fr.name}`}><Trash2 className="w-3.5 h-3.5"/>Supprimer</button>
+                        </>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1148,24 +1223,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Exporter le Catalogue Actuel
                 </h3>
                 <p className="text-xs text-[#6D746E]">
-                  Télécharge un fichier CSV structuré contenant les 35 références botaniques, variantes de contenance, prix en dinars et quantités en stock.
+                  Télécharge le catalogue Firestore courant avec les IDs stables, variantes, prix DZD, stocks et statuts.
                 </p>
                 <button
                   onClick={handleExportCSV}
                   className="px-4 py-2.5 bg-[#244A3B] text-white text-xs font-semibold rounded-xs hover:bg-[#1C3A2E] cursor-pointer flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Télécharger le fichier CSV (35 SKUs)</span>
+                  <span>Télécharger le catalogue CSV actuel</span>
                 </button>
               </div>
 
               <div className="p-6 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs space-y-4">
                 <Upload className="w-6 h-6 text-[#244A3B]" />
                 <h3 className="font-serif-botanical text-lg font-bold text-[#244A3B]">
-                  Simulation d’Import CSV
+                  Import CSV vers Firestore
                 </h3>
                 <p className="text-xs text-[#6D746E]">
-                  Charge un fichier CSV de mise à jour avec vérification d’intégrité des colonnes SKU et prévisualisation avant validation.
+                    Import réel avec aperçu. L’export fournit les IDs stables; les anciennes colonnes restent acceptées pour mettre à jour des variantes reconnues. Les cellules vides conservent les valeurs existantes.
                 </p>
                 <input
                   type="file"
@@ -1175,9 +1250,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     if (file) {
                       const reader = new FileReader();
                       reader.onload = (evt) => {
-                        setCsvPreview(evt.target?.result as string);
-                        showNotification(`Fichier ${file.name} analysé avec succès.`);
+                        setCsvPreview(planCatalogueCsvImport(String(evt.target?.result ?? ''), products));
+                        setCsvImportReport(null);
+                        showNotification(`Aperçu du fichier ${file.name} prêt.`);
                       };
+                      reader.onerror = () => showNotification(`Impossible de lire le fichier ${file.name}.`);
                       reader.readAsText(file);
                     }
                   }}
@@ -1187,16 +1264,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
 
             {csvPreview && (
-              <div className="p-4 bg-neutral-900 text-neutral-100 rounded-xs text-xs font-mono max-h-48 overflow-y-auto">
-                <p className="text-emerald-400 font-bold mb-2">Aperçu du fichier CSV chargé :</p>
-                <pre>{csvPreview.slice(0, 1000)}</pre>
-              </div>
+              <section className="p-4 bg-white border border-[#E3E5DF] rounded-xs space-y-3" aria-live="polite">
+                <h3 className="text-sm font-bold text-[#244A3B]">Aperçu d’import Firestore</h3>
+                <p className="text-xs text-[#292D29]">{csvPreview.creates.length} création(s) · {csvPreview.updates.length} mise(s) à jour · {csvPreview.unchanged.length} inchangé(s) · {csvPreview.duplicates.length} doublon(s) · {csvPreview.errors.length + csvPreview.items.filter((item) => item.action === 'error').length} erreur(s) de validation</p>
+                <ul className="max-h-48 overflow-y-auto divide-y divide-[#E3E5DF] text-xs">
+                  {csvPreview.items.map((item, index) => <li key={`${item.productId}-${index}`} className="py-1.5"><strong>{item.action}</strong> · {item.productId || 'ID manquant'} · {item.sku || 'SKU manquant'} · lignes {item.rows.join(', ')} {item.messages.join(' ')}</li>)}
+                  {csvPreview.errors.map((error, index) => <li key={`error-${index}`} className="py-1.5 text-rose-800">Erreur ligne {error.row}: {error.message}</li>)}
+                </ul>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={handleApplyCsvImport} disabled={isCsvImporting || (!csvPreview.creates.length && !csvPreview.updates.length)} className="px-3 py-2 bg-[#244A3B] text-white text-xs font-semibold rounded-xs disabled:opacity-50">{isCsvImporting ? 'Écriture Firestore…' : 'Confirmer les créations et mises à jour'}</button>
+                  <button type="button" onClick={() => setCsvPreview(null)} disabled={isCsvImporting} className="px-3 py-2 border border-[#E3E5DF] text-xs rounded-xs">Annuler</button>
+                </div>
+              </section>
             )}
+            {csvImportReport && <p role="status" className="p-3 bg-[#FAF9F5] border border-[#E3E5DF] text-xs text-[#292D29]">{csvImportReport}</p>}
           </div>
         )}
 
         {/* Tab 7: Settings & Payment Gateway */}
-        {activeTab === 'settings' && (
+        {activeTab === 'settings' && isSuperAdmin && (
           <div className="bg-white p-6 border border-[#E3E5DF] rounded-xs shadow-xs space-y-6">
             <h2 className="font-serif-botanical text-xl font-bold text-[#244A3B] border-b border-[#E3E5DF] pb-3">
               Paramètres de l’Établissement & Passerelles de Règlement
@@ -1251,6 +1337,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
         )}
 
+        {activeTab === 'team' && isSuperAdmin && <AdminTeamManagement locale={locale} />}
+
         {/* Tab 8: Audit Log */}
         {activeTab === 'audit' && (
           <div className="bg-white p-6 border border-[#E3E5DF] rounded-xs shadow-xs space-y-4">
@@ -1288,9 +1376,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {editingProduct && (
           <ProductEditModal
             product={editingProduct}
+            isNew={isCreatingProduct}
             locale={locale}
             activeStaff={activeStaff}
-            onClose={() => setEditingProduct(null)}
+            onClose={() => { setEditingProduct(null); setIsCreatingProduct(false); }}
             onSave={handleSaveProduct}
           />
         )}

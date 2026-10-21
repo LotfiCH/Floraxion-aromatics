@@ -28,9 +28,13 @@ import { AdminProtectedRoute } from './components/admin/AdminProtectedRoute';
 import { AboutAndPoliciesView } from './components/storefront/AboutAndPolicies';
 import { ArrowRight, Sparkles, Building2, Droplets, ShieldCheck, Award, Leaf } from 'lucide-react';
 import { getDictionary } from './lib/i18n';
+import { useAuth } from './lib/auth';
+import { subscribeProducts } from './lib/products';
 
 export default function App() {
   const navigate = useNavigate();
+  const { admin } = useAuth();
+  const canManageCatalogue = admin?.role === 'super_admin' || admin?.role === 'catalogue_manager';
   const [locale, setLocale] = useState<Locale>('fr');
   const [activeView, setActiveView] = useState<string>(() => {
     if (typeof window !== 'undefined') {
@@ -53,6 +57,8 @@ export default function App() {
 
   // Synchronized Storage State
   const [products, setProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const [productsError, setProductsError] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [shippingRules, setShippingRules] = useState<WilayaDeliveryRule[]>([]);
@@ -62,7 +68,6 @@ export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
 
   const refreshData = () => {
-    setProducts(storage.getProducts());
     setOrders(storage.getOrders());
     setQuotations(storage.getQuotations());
     setShippingRules(storage.getShippingRules());
@@ -71,6 +76,24 @@ export default function App() {
     setCurrentStaff(storage.getCurrentStaff());
     setCart(storage.getCart());
   };
+
+  useEffect(() => {
+    setProductsLoading(true);
+    setProductsError(null);
+    const unsubscribe = subscribeProducts(
+      canManageCatalogue,
+      (nextProducts) => {
+        setProducts(nextProducts);
+        setProductsLoading(false);
+      },
+      (error) => {
+        console.error('Firestore catalogue subscription failed:', error);
+        setProductsError('Le catalogue partagé est indisponible. Aucune copie locale ne sera utilisée à sa place.');
+        setProductsLoading(false);
+      },
+    );
+    return unsubscribe;
+  }, [canManageCatalogue]);
 
   useEffect(() => {
     refreshData();
@@ -227,6 +250,12 @@ export default function App() {
         setSelectedCategory={setSelectedCategory}
       />
 
+      {(productsLoading || productsError) && (
+        <div className={`px-4 py-2 text-center text-xs ${productsError ? 'bg-rose-50 text-rose-800' : 'bg-[#EAE8D9] text-[#244A3B]'}`} role={productsError ? 'alert' : 'status'}>
+          {productsError || 'Chargement du catalogue partagé…'}
+        </div>
+      )}
+
       {/* Main Content Area based on activeView */}
       <main className="flex-1">
         {/* VIEW: HOME */}
@@ -282,6 +311,9 @@ export default function App() {
                     <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
                   </button>
                 </div>
+
+                {productsError && <div role="alert" className="mb-6 p-4 bg-rose-50 border border-rose-200 text-rose-800 text-sm">{productsError}</div>}
+                {productsLoading && <div role="status" className="mb-6 p-4 bg-[#EAE8D9] text-[#244A3B] text-sm">Chargement du catalogue partagé…</div>}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                   {products
@@ -479,14 +511,18 @@ export default function App() {
 
         {/* VIEW: SHOP / CATALOGUE */}
         {activeView === 'shop' && (
-          <ShopView
-            products={products}
-            locale={locale}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-            onSelectProduct={handleSelectProduct}
-            onQuickAdd={handleQuickAdd}
-          />
+          <>
+            {productsError && <div role="alert" className="mx-auto my-6 max-w-7xl px-4"><div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-sm">{productsError}</div></div>}
+            {productsLoading && <div role="status" className="mx-auto my-6 max-w-7xl px-4"><div className="p-4 bg-[#EAE8D9] text-[#244A3B] text-sm">Chargement du catalogue partagé…</div></div>}
+            <ShopView
+              products={products}
+              locale={locale}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              onSelectProduct={handleSelectProduct}
+              onQuickAdd={handleQuickAdd}
+            />
+          </>
         )}
 
         {/* VIEW: PRODUCT DETAIL (PDP) */}
@@ -600,6 +636,8 @@ export default function App() {
               auditLogs={auditLogs}
               currentStaff={currentStaff}
               locale={locale}
+              productsError={productsError}
+              productsLoading={productsLoading}
               onRefreshData={refreshData}
             />
           </AdminProtectedRoute>

@@ -271,6 +271,15 @@ class StorageService {
     return stored;
   }
 
+  getProductsForMigration(): { products: Product[]; source: 'localStorage' | 'bundled' } {
+    if (typeof window === 'undefined') return { products: INITIAL_PRODUCTS, source: 'bundled' };
+    const stored = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+    if (!stored) return { products: INITIAL_PRODUCTS, source: 'bundled' };
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed)) throw new Error('Les données locales du catalogue ne sont pas une liste valide.');
+    return { products: parsed as Product[], source: 'localStorage' };
+  }
+
   saveProducts(products: Product[]): void {
     this.set(STORAGE_KEYS.PRODUCTS, products);
   }

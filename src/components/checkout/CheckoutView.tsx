@@ -116,23 +116,6 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
       // Save to persistence
       storage.addOrder(order);
 
-      // Decrement simulated stock
-      const currentProducts = storage.getProducts();
-      const updatedProducts = currentProducts.map((p) => {
-        const orderItem = items.find((i) => i.productId === p.id);
-        if (orderItem) {
-          const updatedVariants = p.variants.map((v) => {
-            if (v.id === orderItem.variantId && v.trackInventory) {
-              return { ...v, stockQuantity: Math.max(0, v.stockQuantity - orderItem.quantity) };
-            }
-            return v;
-          });
-          return { ...p, variants: updatedVariants };
-        }
-        return p;
-      });
-      storage.saveProducts(updatedProducts);
-
       // Clear cart
       storage.saveCart([]);
 

@@ -6,7 +6,7 @@ import {
   User,
   AuthError,
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { StaffRole } from '../types';
 
@@ -99,56 +99,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Securely listen to authentication changes and verify admin role in Firestore
+  // Track the admin record continuously so role changes and revocations apply
+  // to already-open sessions, as well as to new sign-ins.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    let stopAdminListener: (() => void) | null = null;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      stopAdminListener?.();
+      stopAdminListener = null;
       setFirebaseUser(user);
+      console.info('[Firebase diagnostics] auth state changed', {
+        projectId: auth.app.options.projectId,
+        uid: user?.uid ?? null,
+      });
       if (!user) {
         setAdmin(null);
         setIsLoading(false);
         return;
       }
 
-      try {
-        // Query Firestore for authorized admin record
-        const adminDocRef = doc(db, 'admins', user.uid);
-        const adminSnap = await getDoc(adminDocRef);
+      setIsLoading(true);
+      const adminDocRef = doc(db, 'admins', user.uid);
+      stopAdminListener = onSnapshot(adminDocRef, { includeMetadataChanges: true }, (adminSnap) => {
+        if (auth.currentUser?.uid !== user.uid) return;
+        // Never make an authorization decision from a cached role document.
+        // Wait until Firestore has confirmed the current server state.
+        if (adminSnap.metadata.fromCache) return;
+        const role = adminSnap.exists() ? adminSnap.data()?.role : undefined;
+        console.info('[Firebase diagnostics] admin role lookup completed', {
+          projectId: auth.app.options.projectId,
+          uid: user.uid,
+          recordExists: adminSnap.exists(),
+          role: typeof role === 'string' ? role : null,
+          authorizedStaffRole: isStaffRole(role),
+        });
 
-        if (adminSnap.exists()) {
-          const data = adminSnap.data();
-          if (!isStaffRole(data?.role)) {
-            await signOut(auth);
-            throw new Error(INVALID_ADMIN_ROLE_MESSAGE);
-          }
-          const verifiedRole = data.role;
-          setAdmin({
-            uid: user.uid,
-            email: user.email || '',
-            displayName: data?.displayName || user.displayName || user.email?.split('@')[0] || 'Administrateur',
-            role: verifiedRole,
-            createdAt: data?.createdAt,
-          });
-        } else {
-          // User exists in Firebase Auth but has NOT been granted admin role in Firestore
-          console.warn(`User ${user.email} (${user.uid}) is not listed in Firestore /admins collection.`);
-          await signOut(auth);
+        if (!adminSnap.exists() || !isStaffRole(role)) {
           setAdmin(null);
-          setAuthError(
-            `Accès non autorisé : Le compte ${user.email} ne possède pas les privilèges d’accès au back-office.`
-          );
+          setIsLoading(false);
+          setAuthError(adminSnap.exists()
+            ? INVALID_ADMIN_ROLE_MESSAGE
+            : `Accès non autorisé : Le compte ${user.email} ne possède pas les privilèges d’accès au back-office.`);
+          console.warn(`Admin access removed or invalid for ${user.email} (${user.uid}).`);
+          void signOut(auth).catch((error) => console.error('Unable to close revoked admin session:', error));
+          return;
         }
-      } catch (err) {
+
+        const data = adminSnap.data();
+        setAdmin({
+          uid: user.uid,
+          email: user.email || '',
+          displayName: data?.displayName || user.displayName || user.email?.split('@')[0] || 'Administrateur',
+          role,
+          createdAt: data?.createdAt,
+        });
+        setAuthError(null);
+        setIsLoading(false);
+      }, (err) => {
+        console.error('[Firebase diagnostics] admin role lookup failed', {
+          projectId: auth.app.options.projectId,
+          uid: user.uid,
+          errorCode: typeof err === 'object' && err !== null && 'code' in err
+            ? String((err as { code: unknown }).code)
+            : 'unknown',
+        });
         console.error('Error verifying administrator role:', err);
         setAdmin(null);
-        setAuthError(err instanceof Error && err.message === INVALID_ADMIN_ROLE_MESSAGE
-          ? INVALID_ADMIN_ROLE_MESSAGE
-          : adminLookupErrorMessage(err));
-      } finally {
+        setAuthError(adminLookupErrorMessage(err));
         setIsLoading(false);
-      }
+        void signOut(auth).catch((error) => console.error('Unable to close unverified admin session:', error));
+      });
     });
 
-    return () => unsubscribe();
+    return () => {
+      stopAdminListener?.();
+      unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<AuthenticatedAdmin> => {
@@ -174,7 +199,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let adminSnap;
       try {
         adminSnap = await getDoc(adminDocRef);
+        const role = adminSnap.exists() ? adminSnap.data()?.role : undefined;
+        console.info('[Firebase diagnostics] login admin role lookup completed', {
+          projectId: auth.app.options.projectId,
+          uid: user.uid,
+          recordExists: adminSnap.exists(),
+          role: typeof role === 'string' ? role : null,
+          authorizedStaffRole: isStaffRole(role),
+        });
       } catch (err) {
+        console.error('[Firebase diagnostics] login admin role lookup failed', {
+          projectId: auth.app.options.projectId,
+          uid: user.uid,
+          errorCode: typeof err === 'object' && err !== null && 'code' in err
+            ? String((err as { code: unknown }).code)
+            : 'unknown',
+        });
         await signOut(auth);
         const msg = adminLookupErrorMessage(err);
         setAuthError(msg);

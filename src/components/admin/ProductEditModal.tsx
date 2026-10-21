@@ -22,7 +22,8 @@ interface ProductEditModalProps {
   locale: Locale;
   activeStaff: StaffUser;
   onClose: () => void;
-  onSave: (updatedProduct: Product) => void;
+  onSave: (updatedProduct: Product) => Promise<void> | void;
+  isNew?: boolean;
 }
 
 const BOTANICAL_TAGS = [
@@ -58,6 +59,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   activeStaff,
   onClose,
   onSave,
+  isNew = false,
 }) => {
   // Deep clone initial product data to maintain complete isolation until save
   const [draft, setDraft] = useState<Product>(() => JSON.parse(JSON.stringify(product)));
@@ -177,7 +179,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   };
 
   // Form submission & validation
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -213,7 +215,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
     try {
       setIsSubmitting(true);
-      onSave(draft);
+      await onSave(draft);
     } catch (err: any) {
       setIsSubmitting(false);
       setErrorMessage(err?.message || 'Une erreur inattendue est survenue lors de l’enregistrement.');
@@ -222,12 +224,12 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-xs overflow-hidden animate-fade-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="product-edit-title"
     >
-      <div className="bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs shadow-2xl max-w-4xl w-full max-h-[92vh] flex flex-col overflow-hidden my-auto">
+      <div className="bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs shadow-2xl max-w-4xl w-full h-[calc(100dvh-24px)] sm:h-[calc(100dvh-48px)] max-h-[900px] min-h-0 flex flex-col overflow-hidden my-auto">
         {/* Modal Header */}
         <div className="bg-white px-6 py-4 border-b border-[#E3E5DF] flex items-center justify-between gap-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -255,7 +257,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                 </span>
               </div>
               <h2 id="product-edit-title" className="font-serif-botanical text-xl font-bold text-[#244A3B]">
-                Édition : {draft.translations.fr.name || draft.sku}
+                {isNew ? 'Nouveau produit : ' : 'Édition : '}{draft.translations.fr.name || draft.sku}
               </h2>
             </div>
           </div>
@@ -325,16 +327,15 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
           </button>
         </div>
 
-        {/* Error Banner */}
-        {errorMessage && (
-          <div className="bg-rose-50 border-b border-rose-200 px-6 py-3 flex items-center gap-2 text-rose-800 text-xs">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-            <span>{errorMessage}</span>
-          </div>
-        )}
-
         {/* Modal Form Body */}
-        <form id="product-edit-form" onSubmit={handleFormSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        <form id="product-edit-form" onSubmit={handleFormSubmit} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:p-6 space-y-6">
+          {errorMessage && (
+            <div role="alert" aria-live="assertive" className="bg-rose-50 border border-rose-200 px-4 py-3 flex items-center gap-2 text-rose-800 text-xs">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {/* TAB 1: General & Bilingual Content */}
           {activeSubTab === 'general' && (
             <div className="space-y-6">
@@ -990,22 +991,22 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
         </form>
 
         {/* Modal Footer (Action Buttons) */}
-        <div className="bg-white px-6 py-4 border-t border-[#E3E5DF] flex items-center justify-between gap-4 shrink-0">
+        <div className="bg-white px-4 py-3 sm:px-6 sm:py-4 border-t border-[#E3E5DF] flex flex-col-reverse items-stretch gap-2 shrink-0 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <button
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
-            className="px-4 py-2 border border-[#E3E5DF] text-[#6D746E] hover:text-[#292D29] hover:bg-[#FAF9F5] text-xs font-semibold rounded-xs transition-colors cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 border border-[#E3E5DF] text-[#6D746E] hover:text-[#292D29] hover:bg-[#FAF9F5] text-xs font-semibold rounded-xs transition-colors cursor-pointer"
           >
             Annuler les modifications
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 sm:w-auto">
             <button
               type="submit"
               form="product-edit-form"
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-[#244A3B] hover:bg-[#1C3A2E] text-white text-xs font-bold rounded-xs transition-colors inline-flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-xs bg-[#244A3B] px-6 py-2.5 text-xs font-bold text-white shadow-sm transition-colors hover:bg-[#1C3A2E] disabled:opacity-50 sm:w-auto cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{isSubmitting ? 'Enregistrement en cours...' : 'Enregistrer le produit'}</span>
