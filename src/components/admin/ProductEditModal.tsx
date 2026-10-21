@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Product, ProductVariant, CategorySlug, Locale, StaffUser } from '../../types';
 import { BotanicalIllustration } from '../ui/BotanicalIllustration';
+import { createNewProductIdentity, createVariantSku, validateNewProductDraft } from '../../lib/productCreation';
+import {
+  getImageDataUrlMimeType,
+  isProductImageUploadTooLarge,
+  selectProductImageCanvasMimeType,
+  validateProductImageDataUrl,
+} from '../../lib/productImage';
 import {
   X,
   Save,
@@ -15,10 +22,13 @@ import {
   DollarSign,
   Tag,
   Globe,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 
 interface ProductEditModalProps {
   product: Product;
+  existingProducts: Product[];
   locale: Locale;
   activeStaff: StaffUser;
   onClose: () => void;
@@ -55,6 +65,7 @@ const BOTANICAL_TAGS = [
 
 export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   product,
+  existingProducts,
   locale,
   activeStaff,
   onClose,
@@ -66,12 +77,14 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'variants' | 'specs' | 'image'>('general');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isIdentityCustomized, setIsIdentityCustomized] = useState(false);
 
   // Synchronize draft whenever selected product prop changes
   useEffect(() => {
     setDraft(JSON.parse(JSON.stringify(product)));
     setErrorMessage(null);
     setIsSubmitting(false);
+    setIsIdentityCustomized(false);
   }, [product]);
 
   // Close on Escape key
@@ -85,7 +98,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Handle image file upload with off-screen canvas compression for smooth local storage persistence
+  // Handle image upload with off-screen resizing and format selection for Firestore persistence.
   const handleImageFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -95,15 +108,35 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('L’image ne doit pas dépasser 5 Mo.');
+    if (isProductImageUploadTooLarge(file.size)) {
+      setErrorMessage('L’image dépasse 5 Mo. Réduisez ses dimensions ou compressez le fichier à 5 Mo maximum, puis réessayez.');
       return;
     }
 
     setErrorMessage(null);
     const reader = new FileReader();
     reader.onload = () => {
-      const rawDataUrl = reader.result as string;
+      const rawDataUrl = typeof reader.result === 'string' ? reader.result : '';
+      let originalMimeType: string;
+      try {
+        originalMimeType = getImageDataUrlMimeType(rawDataUrl);
+        if (file.type && originalMimeType !== file.type.toLowerCase()) {
+          throw new Error('Le type de l’image ne correspond pas au fichier sélectionné.');
+        }
+      } catch {
+        setErrorMessage('Le fichier image est invalide ou son format ne peut pas être vérifié.');
+        return;
+      }
+
+      const keepOriginalImage = () => {
+        try {
+          validateProductImageDataUrl(rawDataUrl, originalMimeType);
+          setDraft((prev) => ({ ...prev, imageUrl: rawDataUrl }));
+        } catch {
+          setErrorMessage('Le format de l’image n’a pas pu être vérifié. Choisissez un autre fichier.');
+        }
+      };
+
       // Auto-compress and scale to safe dimension (max 800px)
       const img = new Image();
       img.onload = () => {
@@ -126,7 +159,13 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            const optimized = canvas.toDataURL('image/jpeg', 0.85);
+            const outputMimeType = selectProductImageCanvasMimeType(
+              ctx.getImageData(0, 0, width, height).data,
+            );
+            const optimized = outputMimeType === 'image/png'
+              ? canvas.toDataURL('image/png')
+              : canvas.toDataURL('image/jpeg', 0.85);
+            validateProductImageDataUrl(optimized, outputMimeType);
             setDraft((prev) => ({
               ...prev,
               imageUrl: optimized,
@@ -136,16 +175,10 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
         } catch (canvasErr) {
           console.warn('Canvas optimization fallback:', canvasErr);
         }
-        setDraft((prev) => ({
-          ...prev,
-          imageUrl: rawDataUrl,
-        }));
+        keepOriginalImage();
       };
       img.onerror = () => {
-        setDraft((prev) => ({
-          ...prev,
-          imageUrl: rawDataUrl,
-        }));
+        setErrorMessage('Impossible de décoder cette image. Choisissez un fichier PNG, JPEG ou WebP valide.');
       };
       img.src = rawDataUrl;
     };
@@ -173,9 +206,98 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
         (target as any)[field] = value;
       }
 
+      if (isNew && (field === 'sizeValue' || field === 'sizeUnit')) {
+        target.sku = createVariantSku(
+          prev.sku,
+          target.sizeValue,
+          target.sizeUnit,
+          [prev.sku, ...nextVariants.filter((_, variantIndex) => variantIndex !== index).map((variant) => variant.sku)],
+        );
+      }
+
       nextVariants[index] = target;
       return { ...prev, variants: nextVariants };
     });
+  };
+
+  const handleProductIdChange = (id: string) => {
+    setIsIdentityCustomized(true);
+    setDraft((prev) => ({
+      ...prev,
+      id,
+      variants: prev.variants.map((variant, index) => ({
+        ...variant,
+        id: `${id.slice(0, 104)}-variant-${index + 1}`,
+        productId: id,
+      })),
+    }));
+  };
+
+  const handleProductSkuChange = (sku: string) => {
+    setIsIdentityCustomized(true);
+    setDraft((prev) => {
+      const usedSkus = [sku];
+      const variants = prev.variants.map((variant) => {
+        const nextSku = createVariantSku(sku, variant.sizeValue, variant.sizeUnit, usedSkus);
+        usedSkus.push(nextSku);
+        return { ...variant, sku: nextSku };
+      });
+      return { ...prev, sku, variants };
+    });
+  };
+
+  const handleCategoryChange = (categoryId: CategorySlug) => {
+    if (!isNew || isIdentityCustomized) {
+      setDraft((prev) => ({ ...prev, categoryId }));
+      return;
+    }
+
+    const identity = createNewProductIdentity(existingProducts, categoryId);
+    setDraft((prev) => {
+      const usedSkus = [identity.sku];
+      const variants = prev.variants.map((variant, index) => {
+        const nextSku = createVariantSku(identity.sku, variant.sizeValue, variant.sizeUnit, usedSkus);
+        usedSkus.push(nextSku);
+        return {
+          ...variant,
+          id: `${identity.id}-variant-${index + 1}`,
+          productId: identity.id,
+          sku: nextSku,
+        };
+      });
+      return { ...prev, categoryId, id: identity.id, sku: identity.sku, variants };
+    });
+  };
+
+  const handleAddVariant = () => {
+    setDraft((prev) => {
+      let variantNumber = prev.variants.length + 1;
+      const variantId = () => `${prev.id.slice(0, 104)}-variant-${variantNumber}`;
+      while (prev.variants.some((variant) => variant.id === variantId())) variantNumber += 1;
+
+      const sizeValue = 10;
+      const sizeUnit: ProductVariant['sizeUnit'] = 'ml';
+      const variant: ProductVariant = {
+        id: variantId(),
+        productId: prev.id,
+        sku: createVariantSku(prev.sku, sizeValue, sizeUnit, [prev.sku, ...prev.variants.map((item) => item.sku)]),
+        sizeValue,
+        sizeUnit,
+        packagingLabel: { fr: '', ar: '' },
+        priceDZD: null,
+        stockQuantity: 0,
+        trackInventory: true,
+        isActive: true,
+        isPurchasableOnline: false,
+      };
+      return { ...prev, variants: [...prev.variants, variant] };
+    });
+  };
+
+  const handleRemoveVariant = (index: number) => {
+    setDraft((prev) => prev.variants.length <= 1
+      ? prev
+      : { ...prev, variants: prev.variants.filter((_, variantIndex) => variantIndex !== index) });
   };
 
   // Form submission & validation
@@ -197,6 +319,15 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
       setErrorMessage('Le nom du produit en arabe est obligatoire.');
       setActiveSubTab('general');
       return;
+    }
+
+    if (isNew) {
+      const validationError = validateNewProductDraft(draft, existingProducts)[0];
+      if (validationError) {
+        setErrorMessage(validationError.message);
+        setActiveSubTab(validationError.section === 'variants' ? 'variants' : 'general');
+        return;
+      }
     }
 
     // Validate variants numbers
@@ -339,6 +470,45 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
           {/* TAB 1: General & Bilingual Content */}
           {activeSubTab === 'general' && (
             <div className="space-y-6">
+              {isNew && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white p-4 rounded-xs border border-[#E3E5DF]">
+                  <div>
+                    <label htmlFor="new-product-id" className="block text-xs font-semibold text-[#292D29] mb-1">
+                      Identifiant unique du produit
+                    </label>
+                    <input
+                      id="new-product-id"
+                      type="text"
+                      value={draft.id}
+                      onChange={(e) => handleProductIdChange(e.target.value)}
+                      maxLength={128}
+                      pattern="[a-zA-Z0-9_-]+"
+                      autoComplete="off"
+                      required
+                      className="w-full py-2 px-3 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs font-mono text-[#292D29] focus:border-[#244A3B] focus:outline-none"
+                    />
+                    <p className="mt-1 text-[10px] text-[#6D746E]">Utilisé comme identifiant du document Firestore.</p>
+                  </div>
+                  <div>
+                    <label htmlFor="new-product-sku" className="block text-xs font-semibold text-[#292D29] mb-1">
+                      SKU du produit
+                    </label>
+                    <input
+                      id="new-product-sku"
+                      type="text"
+                      value={draft.sku}
+                      onChange={(e) => handleProductSkuChange(e.target.value)}
+                      maxLength={128}
+                      pattern="[a-zA-Z0-9_-]+"
+                      autoComplete="off"
+                      required
+                      className="w-full py-2 px-3 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs font-mono text-[#292D29] focus:border-[#244A3B] focus:outline-none"
+                    />
+                    <p className="mt-1 text-[10px] text-[#6D746E]">Généré selon la famille et modifiable avant l’enregistrement.</p>
+                  </div>
+                </div>
+              )}
+
               {/* Status, Category & Visibility Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-white p-4 rounded-xs border border-[#E3E5DF]">
                 <div>
@@ -362,7 +532,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                   </label>
                   <select
                     value={draft.categoryId}
-                    onChange={(e) => setDraft({ ...draft, categoryId: e.target.value as CategorySlug })}
+                    onChange={(e) => handleCategoryChange(e.target.value as CategorySlug)}
                     className="w-full py-1.5 px-3 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs text-[#292D29] focus:border-[#244A3B] focus:outline-none"
                   >
                     <option value="essential-oils">Huiles Essentielles</option>
@@ -370,6 +540,9 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                     <option value="hydrolats">Hydrolats Botaniques</option>
                     <option value="olive-oils">Huiles d’Olive Vierge Extra & Aromatisées</option>
                   </select>
+                  {isNew && !isIdentityCustomized && (
+                    <p className="mt-1 text-[10px] text-[#6D746E]">Le changement de famille adapte l’ID et le SKU générés; vous pourrez ensuite modifier le SKU.</p>
+                  )}
                 </div>
 
                 <div className="flex items-end pb-1">
@@ -648,6 +821,14 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                     Ajustez les prix en Dinar Algérien (DZD), les quantités en stock et l'éligibilité à la vente directe pour chaque variante.
                   </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={handleAddVariant}
+                  className="inline-flex shrink-0 items-center gap-1.5 px-3 py-2 bg-[#244A3B] hover:bg-[#1C3A2E] text-white text-xs font-semibold rounded-xs transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Ajouter un format</span>
+                </button>
               </div>
 
               <div className="space-y-4">
@@ -684,6 +865,49 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                           />
                           <span>Vente en ligne</span>
                         </label>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVariant(idx)}
+                          disabled={draft.variants.length <= 1}
+                          className="inline-flex items-center gap-1 text-rose-700 hover:text-rose-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                          aria-label={`Supprimer le conditionnement ${v.packagingLabel?.fr || idx + 1}`}
+                          title={draft.variants.length <= 1 ? 'Un produit doit garder au moins un conditionnement.' : 'Supprimer ce conditionnement'}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Supprimer</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#292D29] mb-1">
+                          Quantité du format
+                        </label>
+                        <input
+                          type="number"
+                          min="0.001"
+                          step="any"
+                          value={v.sizeValue}
+                          onChange={(e) => handleUpdateVariant(idx, 'sizeValue', Number(e.target.value))}
+                          required={isNew}
+                          className="w-full py-1.5 px-2.5 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs text-[#292D29] focus:border-[#244A3B] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-[#292D29] mb-1">
+                          Unité
+                        </label>
+                        <select
+                          value={v.sizeUnit}
+                          onChange={(e) => handleUpdateVariant(idx, 'sizeUnit', e.target.value as ProductVariant['sizeUnit'])}
+                          className="w-full py-1.5 px-2.5 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs text-[#292D29] focus:border-[#244A3B] focus:outline-none"
+                        >
+                          <option value="ml">ml</option>
+                          <option value="L">L</option>
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                        </select>
                       </div>
                     </div>
 
@@ -694,7 +918,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                         </label>
                         <input
                           type="number"
-                          min="0"
+                          min="0.01"
                           step="50"
                           value={v.priceDZD ?? ''}
                           onChange={(e) =>
@@ -769,6 +993,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                           type="text"
                           value={v.packagingLabel?.fr || ''}
                           onChange={(e) => handleUpdateVariant(idx, 'labelFr', e.target.value)}
+                          required={isNew}
                           className="w-full py-1.5 px-2.5 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs text-[#292D29] focus:border-[#244A3B] focus:outline-none"
                         />
                       </div>
@@ -781,6 +1006,7 @@ export const ProductEditModal: React.FC<ProductEditModalProps> = ({
                           dir="rtl"
                           value={v.packagingLabel?.ar || ''}
                           onChange={(e) => handleUpdateVariant(idx, 'labelAr', e.target.value)}
+                          required={isNew}
                           className="w-full py-1.5 px-2.5 bg-[#FAF9F5] border border-[#E3E5DF] rounded-xs text-xs text-[#292D29] focus:border-[#244A3B] focus:outline-none text-right font-sans"
                         />
                       </div>

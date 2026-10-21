@@ -14,6 +14,7 @@ import type { Unsubscribe } from 'firebase/firestore';
 import type { Product, StaffRole } from '../types';
 import { auth, db } from './firebase';
 import { executeCsvImport, type CsvImportPreview } from './catalogueCsv';
+import { validateNewProductDraft } from './productCreation';
 
 const CATALOGUE_ROLES: StaffRole[] = ['super_admin', 'catalogue_manager'];
 const MAX_PRODUCT_DOCUMENT_BYTES = 900 * 1024;
@@ -32,7 +33,7 @@ function productDocument(product: Product): Record<string, unknown> {
   const cleanProduct = JSON.parse(JSON.stringify(product)) as Product;
   const size = new TextEncoder().encode(JSON.stringify(cleanProduct)).length;
   if (size > MAX_PRODUCT_DOCUMENT_BYTES) {
-    throw new Error(`Le produit ${product.sku} dépasse la taille sûre pour un document Firestore. Utilisez une URL d’image hébergée au lieu d’une image intégrée.`);
+    throw new Error(`Le produit ${product.sku} dépasse la taille sûre pour un document Firestore. Réduisez les dimensions ou la taille de l’image, ou utilisez une URL d’image hébergée. Aucune donnée n’a été enregistrée.`);
   }
   return cleanProduct as unknown as Record<string, unknown>;
 }
@@ -81,6 +82,14 @@ export function subscribeProducts(
 
 export async function createProduct(product: Product): Promise<void> {
   await requireCatalogueAdmin();
+  const existingSnapshot = await getDocs(collection(db, 'products'));
+  const existingProducts = existingSnapshot.docs.map((productDoc) => ({
+    ...productDoc.data(),
+    id: productDoc.id,
+  }) as Product);
+  const validationErrors = validateNewProductDraft(product, existingProducts);
+  if (validationErrors.length > 0) throw new Error(validationErrors[0].message);
+
   const reference = doc(db, 'products', product.id);
   const serialized = productDocument(product);
   await runTransaction(db, async (transaction) => {

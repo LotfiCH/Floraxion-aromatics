@@ -97,7 +97,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 <div key={`${item.productId}-${item.variantId}`} className="py-4 flex gap-4">
                   {/* Thumbnail */}
                   <div className="w-18 h-18 shrink-0 rounded-xs overflow-hidden border border-[#E3E5DF]">
-                    <BotanicalIllustration tag={item.imageTag} className="w-full h-full p-1" />
+                    <BotanicalIllustration tag={item.imageTag} imageUrl={item.imageUrl} className="w-full h-full p-1" />
                   </div>
 
                   {/* Details */}

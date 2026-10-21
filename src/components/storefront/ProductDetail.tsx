@@ -451,7 +451,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
                     className="p-4 bg-white border border-[#E3E5DF] rounded-xs hover:border-[#244A3B] transition-all cursor-pointer flex gap-4 items-center"
                   >
                     <div className="w-16 h-16 shrink-0 rounded-xs overflow-hidden border border-[#E3E5DF]">
-                      <BotanicalIllustration tag={rel.imageTag} className="w-full h-full p-1" />
+                      <BotanicalIllustration tag={rel.imageTag} imageUrl={rel.imageUrl} className="w-full h-full p-1" />
                     </div>
                     <div className="min-w-0">
                       <p className="text-xs font-semibold text-[#292D29] truncate">

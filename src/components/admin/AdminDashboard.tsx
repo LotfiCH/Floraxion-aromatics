@@ -20,6 +20,7 @@ import { convertQuotationToOrder, formatDZD, validateOrderStatusTransition } fro
 import { storage } from '../../lib/storage';
 import { applyCatalogueCsvImport, createProduct, deleteProduct, migrateMissingProducts, previewProductMigration, updateProduct, type ProductMigrationPreview } from '../../lib/products';
 import { planCatalogueCsvImport, serializeCatalogueCsv, type CsvImportPreview } from '../../lib/catalogueCsv';
+import { createNewProductDraft, createUniqueProductSlug } from '../../lib/productCreation';
 import { ProductEditModal } from './ProductEditModal';
 import { AdminTeamManagement } from './AdminTeamManagement';
 import { getAllowedAdminSections, getDefaultAdminSection, type AdminSection } from '../../lib/adminAccess';
@@ -45,6 +46,7 @@ import {
   ArrowLeft,
   ShieldCheck,
   Users,
+  Plus,
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -292,7 +294,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Product Save Operation
   const handleSaveProduct = async (updatedProduct: Product) => {
     try {
-      const productToSave = { ...updatedProduct, updatedAt: new Date().toISOString() };
+      const productToSave = {
+        ...updatedProduct,
+        ...(isCreatingProduct ? {
+          id: updatedProduct.id.trim(),
+          sku: updatedProduct.sku.trim(),
+          slug: createUniqueProductSlug(updatedProduct.translations.fr.name, updatedProduct.id.trim(), products),
+        } : {}),
+        updatedAt: new Date().toISOString(),
+      };
       if (isCreatingProduct) await createProduct(productToSave);
       else await updateProduct(productToSave);
       onRefreshData();
@@ -345,6 +355,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     };
     setIsCreatingProduct(true);
     setEditingProduct(draft);
+  };
+
+  const handleNewProduct = () => {
+    if (!canManageCatalogue) return;
+    if (productsLoading || productsError) {
+      showNotification('Le catalogue doit être disponible pour vérifier les identifiants et SKU avant une création.');
+      return;
+    }
+    try {
+      setIsCreatingProduct(true);
+      setEditingProduct(createNewProductDraft(products));
+    } catch (err: any) {
+      showNotification(err?.message || 'Impossible de générer un identifiant produit disponible.');
+    }
   };
 
   const handlePreviewMigration = async () => {
@@ -673,8 +697,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </select>
               </div>
 
-              <div className="text-xs text-[#6D746E]">
-                {filteredProducts.length} références affichées
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+                <div className="text-xs text-[#6D746E]">
+                  {filteredProducts.length} références affichées
+                </div>
+                {canManageCatalogue && (
+                  <button
+                    type="button"
+                    onClick={handleNewProduct}
+                    disabled={productsLoading || Boolean(productsError)}
+                    aria-label="+ Nouveau produit"
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap px-4 py-2 bg-[#244A3B] hover:bg-[#1C3A2E] text-white text-xs font-bold rounded-xs shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Nouveau produit</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -1377,6 +1415,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <ProductEditModal
             product={editingProduct}
             isNew={isCreatingProduct}
+            existingProducts={products}
             locale={locale}
             activeStaff={activeStaff}
             onClose={() => { setEditingProduct(null); setIsCreatingProduct(false); }}

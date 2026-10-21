@@ -37,7 +37,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           />
 
           {/* Quick action overlay on hover */}
-          <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-4">
+          <div className="absolute inset-0 z-20 bg-black/10 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity flex items-center justify-center gap-2 p-4">
             <button
               onClick={(e) => {
                 e.stopPropagation();

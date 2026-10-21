@@ -174,6 +174,7 @@ export default function App() {
         unitPriceDZD: variant.priceDZD || 0,
         quantity,
         imageTag: product.imageTag,
+        imageUrl: product.imageUrl,
         maxStock: variant.stockQuantity,
       };
       updatedCart = [newItem, ...cart];
