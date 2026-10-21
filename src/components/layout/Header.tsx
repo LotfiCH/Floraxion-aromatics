@@ -57,15 +57,15 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Zone 1: Brand Wordmark */}
           <button
             onClick={() => navigateTo('home')}
-            className="flex items-baseline gap-2 shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#244A3B] rounded-xs py-1"
+            className="flex items-center shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#244A3B] rounded-xs py-1"
             aria-label="Floraxion Aromatics"
           >
-            <span className="font-serif-botanical text-2xl sm:text-3xl font-semibold tracking-tight text-[#244A3B] leading-none">
-              Floraxion
-            </span>
-            <span className="text-[10px] sm:text-[11px] tracking-widest uppercase font-medium text-[#829477] hidden sm:inline leading-none">
-              Aromatics
-            </span>
+            <img
+              src="/logo-floraxion-main.svg"
+              alt="Floraxion Aromatics"
+              className="block h-auto w-[120px] sm:w-[176px] lg:w-[190px]"
+              draggable={false}
+            />
           </button>
 
           {/* Zone 2: Streamlined 3 Navigation Buttons - Reduced, Clean, No Dropdown */}
