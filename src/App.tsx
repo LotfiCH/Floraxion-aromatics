@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import {
   AuditLogEntry,
   CartItem,
@@ -20,7 +20,9 @@ import { ProductDetail } from './components/storefront/ProductDetail';
 import { ShopView } from './components/storefront/ShopView';
 import { CartDrawer } from './components/cart/CartDrawer';
 import { CheckoutView } from './components/checkout/CheckoutView';
+import { CustomerCheckoutRoute } from './components/checkout/CustomerCheckoutRoute';
 import { OrderConfirmationView } from './components/checkout/OrderConfirmationView';
+import { CustomerAccountView } from './components/storefront/CustomerAccountView';
 import { B2BQuoteView } from './components/quote/B2BQuoteView';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLogin } from './components/admin/AdminLogin';
@@ -33,7 +35,8 @@ import { subscribeProducts } from './lib/products';
 
 export default function App() {
   const navigate = useNavigate();
-  const { admin } = useAuth();
+  const location = useLocation();
+  const { admin, firebaseUser } = useAuth();
   const canManageCatalogue = admin?.role === 'super_admin' || admin?.role === 'catalogue_manager';
   const [locale, setLocale] = useState<Locale>('fr');
   const [activeView, setActiveView] = useState<string>(() => {
@@ -137,6 +140,7 @@ export default function App() {
       navigate('/admin/dashboard');
       return;
     }
+    if (location.pathname !== '/') navigate('/');
     setActiveView(view);
     if (typeof window !== 'undefined') {
       window.location.hash = view;
@@ -213,6 +217,17 @@ export default function App() {
     setCart([]);
     refreshData();
     setActiveView('confirmation');
+    navigate('/');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const proceedToCheckout = () => {
+    setIsCartDrawerOpen(false);
+    if (!firebaseUser) {
+      navigate('/account?mode=login&returnTo=%2Fcheckout');
+      return;
+    }
+    navigate('/checkout');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -259,6 +274,24 @@ export default function App() {
 
       {/* Main Content Area based on activeView */}
       <main className="flex-1">
+        {location.pathname === '/account' ? (
+          <CustomerAccountView locale={locale} />
+        ) : location.pathname === '/checkout' ? (
+          <CheckoutView
+            items={cart}
+            locale={locale}
+            wilayas={shippingRules}
+            settings={settings}
+            customerUid={firebaseUser?.uid || ''}
+            onBackToCart={() => {
+              setActiveView('home');
+              navigate('/');
+              setIsCartDrawerOpen(true);
+            }}
+            onOrderCompleted={handleOrderCompleted}
+          />
+        ) : (
+          <>
         {/* VIEW: HOME */}
         {activeView === 'home' && (
           <div>
@@ -542,18 +575,6 @@ export default function App() {
           />
         )}
 
-        {/* VIEW: CHECKOUT */}
-        {activeView === 'checkout' && (
-          <CheckoutView
-            items={cart}
-            locale={locale}
-            wilayas={shippingRules}
-            settings={settings}
-            onBackToCart={() => setIsCartDrawerOpen(true)}
-            onOrderCompleted={handleOrderCompleted}
-          />
-        )}
-
         {/* VIEW: ORDER CONFIRMATION */}
         {activeView === 'confirmation' && lastOrder && (
           <OrderConfirmationView
@@ -594,6 +615,8 @@ export default function App() {
             onBack={() => setActiveView('home')}
           />
         )}
+          </>
+        )}
       </main>
 
       {/* Cart Slide-Over Drawer */}
@@ -603,11 +626,7 @@ export default function App() {
         items={cart}
         onUpdateQuantity={handleUpdateCartQty}
         onRemoveItem={handleRemoveCartItem}
-        onCheckout={() => {
-          setIsCartDrawerOpen(false);
-          setActiveView('checkout');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
+        onCheckout={proceedToCheckout}
         locale={locale}
         freeShippingThreshold={settings.freeShippingThresholdDZD}
       />
@@ -645,6 +664,17 @@ export default function App() {
               onRefreshData={refreshData}
             />
           </AdminProtectedRoute>
+        }
+      />
+
+      {/* Customer account and authenticated checkout use the same storefront shell. */}
+      <Route path="/account" element={storefrontContent} />
+      <Route
+        path="/checkout"
+        element={
+          <CustomerCheckoutRoute locale={locale}>
+            {storefrontContent}
+          </CustomerCheckoutRoute>
         }
       />
 
