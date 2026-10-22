@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Locale } from '../../types';
 import { getDictionary } from '../../lib/i18n';
 import { useAuth } from '../../lib/auth';
-import { ShoppingBag, Menu, X, ShieldCheck } from 'lucide-react';
+import { ShoppingBag, Menu, X, ShieldCheck, UserRound } from 'lucide-react';
 
 interface HeaderProps {
   locale: Locale;
@@ -27,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   setSelectedCategory,
 }) => {
   const t = getDictionary(locale);
-  const { admin } = useAuth();
+  const { admin, firebaseUser } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -50,6 +50,12 @@ export const Header: React.FC<HeaderProps> = ({
     document.documentElement.dir = nextLocale === 'ar' ? 'rtl' : 'ltr';
   };
 
+  const openAccount = () => {
+    navigate('/account');
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-[#F8F7F2]/95 backdrop-blur-md border-b border-[#E3E5DF] transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -63,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
             <img
               src="/logo-floraxion-main.svg"
               alt="Floraxion Aromatics"
-              className="block h-auto w-[120px] sm:w-[176px] lg:w-[190px]"
+              className="block h-auto w-[104px] min-[380px]:w-[120px] sm:w-[176px] lg:w-[190px]"
               draggable={false}
             />
           </button>
@@ -108,17 +114,29 @@ export const Header: React.FC<HeaderProps> = ({
           </nav>
 
           {/* Zone 3: Perfectly Aligned Utility Buttons Cluster (All uniform height h-9) */}
-          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 min-[380px]:gap-2 sm:gap-2.5 shrink-0">
             {/* Language Switcher Button (Height 36px / h-9) */}
             <button
               onClick={toggleLanguage}
-              className="h-9 px-3 text-xs font-semibold rounded-xs border border-[#E3E5DF] bg-[#FAF9F5] hover:bg-white text-[#244A3B] hover:border-[#244A3B] transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 shadow-2xs"
+              className="h-9 px-2 sm:px-3 text-xs font-semibold rounded-xs border border-[#E3E5DF] bg-[#FAF9F5] hover:bg-white text-[#244A3B] hover:border-[#244A3B] transition-colors cursor-pointer inline-flex items-center justify-center shrink-0 shadow-2xs"
               title={locale === 'fr' ? 'التبديل إلى اللغة العربية' : 'Passer au Français'}
               aria-label="Changer de langue"
             >
-              <span className="font-semibold">
+              <span className="font-semibold hidden min-[380px]:inline">
                 {locale === 'fr' ? 'العربية' : 'Français'}
               </span>
+              <span className="font-semibold min-[380px]:hidden">ع/Fr</span>
+            </button>
+
+            {/* Customer account access, available to guests and signed-in customers. */}
+            <button
+              onClick={openAccount}
+              className="h-9 w-9 sm:w-auto sm:px-2.5 inline-flex items-center justify-center gap-2 rounded-xs border border-[#E3E5DF] bg-[#FAF9F5] text-[#244A3B] hover:bg-white hover:border-[#244A3B] transition-colors cursor-pointer shrink-0 shadow-2xs"
+              title={firebaseUser ? `${t.nav.account} · ${firebaseUser.email || ''}` : t.nav.signIn}
+              aria-label={firebaseUser ? t.nav.account : t.nav.signIn}
+            >
+              <UserRound className="w-4 h-4" strokeWidth={1.7} />
+              <span className="hidden sm:inline text-xs font-medium">{t.nav.account}</span>
             </button>
 
             {/* Discreet Admin Console Button: ONLY displayed to verified authenticated administrators */}
@@ -194,6 +212,14 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             {/* Shortened Devis B2B */}
+            <button
+              onClick={openAccount}
+              className="text-start py-2 px-2 rounded-xs transition-colors flex items-center gap-2 text-[#292D29] hover:text-[#244A3B]"
+            >
+              <UserRound className="w-4 h-4" strokeWidth={1.7} />
+              <span>{firebaseUser ? t.nav.account : t.nav.signIn}</span>
+            </button>
+
             <button
               onClick={() => navigateTo('b2b')}
               className={`text-start py-2 px-2 rounded-xs transition-colors ${

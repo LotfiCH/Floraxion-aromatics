@@ -1,14 +1,17 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  updateProfile,
   User,
   AuthError,
 } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
-import { StaffRole } from '../types';
+import { Locale, StaffRole } from '../types';
 
 export interface AuthenticatedAdmin {
   uid: string;
@@ -49,8 +52,13 @@ interface AuthContextType {
   admin: AuthenticatedAdmin | null;
   firebaseUser: User | null;
   isLoading: boolean;
+  isAuthReady: boolean;
   isAuthenticated: boolean;
+  isCustomerAuthenticated: boolean;
   login: (email: string, password: string) => Promise<AuthenticatedAdmin>;
+  loginCustomer: (email: string, password: string) => Promise<User>;
+  registerCustomer: (displayName: string, email: string, password: string) => Promise<User>;
+  sendCustomerPasswordReset: (email: string, locale: Locale) => Promise<void>;
   logout: () => Promise<void>;
   authError: string | null;
   clearAuthError: () => void;
@@ -97,7 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [admin, setAdmin] = useState<AuthenticatedAdmin | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const verifiedAdminUid = useRef<string | null>(null);
 
   // Track the admin record continuously so role changes and revocations apply
   // to already-open sessions, as well as to new sign-ins.
@@ -107,14 +117,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       stopAdminListener?.();
       stopAdminListener = null;
       setFirebaseUser(user);
+      setIsAuthReady(true);
       console.info('[Firebase diagnostics] auth state changed', {
         projectId: auth.app.options.projectId,
         uid: user?.uid ?? null,
       });
       if (!user) {
+        verifiedAdminUid.current = null;
         setAdmin(null);
         setIsLoading(false);
+        setAuthError(null);
         return;
+      }
+
+      if (verifiedAdminUid.current && verifiedAdminUid.current !== user.uid) {
+        verifiedAdminUid.current = null;
       }
 
       setIsLoading(true);
@@ -134,17 +151,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (!adminSnap.exists() || !isStaffRole(role)) {
+          const wasVerifiedAdmin = verifiedAdminUid.current === user.uid;
           setAdmin(null);
           setIsLoading(false);
-          setAuthError(adminSnap.exists()
-            ? INVALID_ADMIN_ROLE_MESSAGE
-            : `Accès non autorisé : Le compte ${user.email} ne possède pas les privilèges d’accès au back-office.`);
-          console.warn(`Admin access removed or invalid for ${user.email} (${user.uid}).`);
-          void signOut(auth).catch((error) => console.error('Unable to close revoked admin session:', error));
+          // A missing admin record is the normal state for a customer account.
+          // An existing but invalid record still revokes the privileged session.
+          if (adminSnap.exists() || wasVerifiedAdmin) {
+            setAuthError(INVALID_ADMIN_ROLE_MESSAGE);
+            console.warn(`Admin access removed or invalid for ${user.email} (${user.uid}).`);
+            void signOut(auth).catch((error) => console.error('Unable to close revoked admin session:', error));
+          } else {
+            setAuthError(null);
+          }
           return;
         }
 
         const data = adminSnap.data();
+        verifiedAdminUid.current = user.uid;
         setAdmin({
           uid: user.uid,
           email: user.email || '',
@@ -166,7 +189,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setAdmin(null);
         setAuthError(adminLookupErrorMessage(err));
         setIsLoading(false);
-        void signOut(auth).catch((error) => console.error('Unable to close unverified admin session:', error));
+        if (verifiedAdminUid.current === user.uid) {
+          void signOut(auth).catch((error) => console.error('Unable to close unverified admin session:', error));
+        }
       });
     });
 
@@ -252,6 +277,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginCustomer = async (email: string, password: string): Promise<User> => {
+    setAuthError(null);
+    const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
+    return credential.user;
+  };
+
+  const registerCustomer = async (
+    displayName: string,
+    email: string,
+    password: string,
+  ): Promise<User> => {
+    setAuthError(null);
+    const credential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+    await updateProfile(credential.user, { displayName: displayName.trim() });
+    return credential.user;
+  };
+
+  const sendCustomerPasswordReset = async (email: string, locale: Locale): Promise<void> => {
+    setAuthError(null);
+    auth.languageCode = locale;
+    await sendPasswordResetEmail(auth, email.trim());
+  };
+
   const logout = async (): Promise<void> => {
     try {
       await signOut(auth);
@@ -270,8 +318,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         admin,
         firebaseUser,
         isLoading,
+        isAuthReady,
         isAuthenticated: !!admin,
+        isCustomerAuthenticated: !!firebaseUser,
         login,
+        loginCustomer,
+        registerCustomer,
+        sendCustomerPasswordReset,
         logout,
         authError,
         clearAuthError: () => setAuthError(null),

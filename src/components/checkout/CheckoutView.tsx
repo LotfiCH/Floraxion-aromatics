@@ -23,6 +23,7 @@ interface CheckoutViewProps {
   locale: Locale;
   wilayas: WilayaDeliveryRule[];
   settings: SiteSettings;
+  customerUid: string;
   onBackToCart: () => void;
   onOrderCompleted: (order: Order) => void;
 }
@@ -32,6 +33,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
   locale,
   wilayas,
   settings,
+  customerUid,
   onBackToCart,
   onOrderCompleted,
 }) => {
@@ -105,13 +107,16 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
     };
 
     try {
-      const order = createOrderSnapshot({
-        cartItems: items,
-        customer: customerAddress,
-        shippingFeeDZD: calculatedShipping,
-        paymentMethod,
-        customerNote: deliveryNotes.trim() || undefined,
-      });
+      const order = {
+        ...createOrderSnapshot({
+          cartItems: items,
+          customer: customerAddress,
+          shippingFeeDZD: calculatedShipping,
+          paymentMethod,
+          customerNote: deliveryNotes.trim() || undefined,
+        }),
+        customerUid,
+      };
 
       // Save to persistence
       storage.addOrder(order);

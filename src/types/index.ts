@@ -153,6 +153,8 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
+  /** Firebase Auth UID used to scope this customer's order history. */
+  customerUid?: string;
   orderNumber: string;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
