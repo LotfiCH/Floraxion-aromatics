@@ -149,6 +149,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
           <p className="text-xs sm:text-sm text-[#6D746E] mt-1">{t.checkout.subtitle}</p>
         </div>
 
+        <div role="note" className="mb-6 flex items-start gap-3 border border-[#B68B48]/40 bg-[#B68B48]/10 p-4 text-[#5B513F]">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-[#9A743B]" aria-hidden="true" />
+          <div>
+            <p className="text-xs font-semibold">{t.checkout.reviewModeTitle}</p>
+            <p className="mt-1 text-xs leading-relaxed">{t.checkout.reviewModeNotice}</p>
+          </div>
+        </div>
+
         {formError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xs flex items-center gap-3 text-red-800 text-xs font-medium">
             <AlertCircle className="w-5 h-5 shrink-0" />
@@ -366,7 +374,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({
                   </label>
                 ) : (
                   <div className="p-3 bg-neutral-100 border border-[#E3E5DF] rounded-xs text-[11px] text-[#6D746E]">
-                    Le paiement à la livraison n’est pas disponible pour la wilaya de {selectedWilaya.nameFr}. Seul le virement préalable est accepté.
+                    {t.checkout.cashOnDeliveryUnavailable} ({locale === 'ar' ? selectedWilaya.nameAr : selectedWilaya.nameFr})
                   </div>
                 )}
 

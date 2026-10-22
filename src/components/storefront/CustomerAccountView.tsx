@@ -222,6 +222,7 @@ export const CustomerAccountView: React.FC<CustomerAccountViewProps> = ({ locale
               <PackageCheck className="h-5 w-5 text-[#829477]" strokeWidth={1.6} />
               <h2 className="font-serif-botanical text-xl font-semibold text-[#244A3B]">{t.ordersTitle}</h2>
             </div>
+            <p className="mt-4 text-xs leading-relaxed text-[#6D746E]">{t.ordersPreviewNotice}</p>
             {ordersLoading && sortedOrders.length === 0 && (
               <p className="py-6 text-sm text-[#6D746E]" role="status">{t.loadingOrders}</p>
             )}

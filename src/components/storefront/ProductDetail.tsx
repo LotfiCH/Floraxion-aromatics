@@ -4,6 +4,7 @@ import { getDictionary } from '../../lib/i18n';
 import { formatDZD } from '../../lib/commerce';
 import { BotanicalIllustration } from '../ui/BotanicalIllustration';
 import { ProductBadgeLabel } from '../ui/ProductBadgeLabel';
+import { ProductReviews } from './ProductReviews';
 import {
   ArrowLeft,
   Check,
@@ -37,6 +38,13 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
 }) => {
   const t = getDictionary(locale);
   const trans = product.translations[locale] || product.translations.fr;
+  const categoryLabel = product.categoryId === 'essential-oils'
+    ? t.nav.essentialOils
+    : product.categoryId === 'vegetable-oils'
+    ? t.nav.vegetableOils
+    : product.categoryId === 'olive-oils'
+    ? t.nav.oliveOils
+    : t.nav.hydrolats;
 
   // Active variant selection
   const defaultVariant = product.variants.find((v) => v.isActive) || product.variants[0];
@@ -57,29 +65,32 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
     .slice(0, 3);
 
   return (
-    <div className="py-8 sm:py-12 bg-[#F8F7F2]">
+    <div className="pt-4 pb-8 sm:py-12 bg-[#F8F7F2]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Navigation Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-xs text-[#6D746E] mb-8 font-medium">
+        <nav className="mb-4 flex w-full min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap text-xs font-medium text-[#6D746E] sm:mb-8 sm:gap-2">
           <button
             onClick={onBack}
-            className="hover:text-[#244A3B] flex items-center gap-1 cursor-pointer transition-colors"
+            className="inline-flex shrink-0 cursor-pointer items-center gap-1 whitespace-nowrap transition-colors hover:text-[#244A3B]"
           >
-            <ArrowLeft className="w-3.5 h-3.5 rtl:rotate-180" />
+            <ArrowLeft className="h-3.5 w-3.5 shrink-0 rtl:rotate-180" />
             <span>{t.nav.shop}</span>
           </button>
-          <span aria-hidden="true">/</span>
-          <span className="text-[#829477] uppercase font-mono">
-            {product.categoryId === 'essential-oils'
-              ? t.nav.essentialOils
-              : product.categoryId === 'vegetable-oils'
-              ? t.nav.vegetableOils
-              : product.categoryId === 'olive-oils'
-              ? t.nav.oliveOils
-              : t.nav.hydrolats}
+          <span aria-hidden="true" className="shrink-0 px-0.5 text-[#B8C0B3]">/</span>
+          <span
+            title={categoryLabel}
+            className="min-w-0 max-w-[25vw] shrink truncate font-mono text-[#829477] uppercase sm:max-w-none"
+          >
+            {categoryLabel}
           </span>
-          <span aria-hidden="true">/</span>
-          <span className="text-[#292D29] font-semibold truncate max-w-xs">{trans.name}</span>
+          <span aria-hidden="true" className="shrink-0 px-0.5 text-[#B8C0B3]">/</span>
+          <span
+            aria-current="page"
+            title={trans.name}
+            className="min-w-0 max-w-xs flex-1 truncate font-semibold text-[#292D29]"
+          >
+            {trans.name}
+          </span>
         </nav>
 
         {/* Main Contiguous Purchase Grid (Sticky Purchase Module) */}
@@ -116,16 +127,19 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
           {/* Right: Contiguous Purchase Module */}
           <div className="lg:col-span-6 space-y-6">
             <div>
-              {/* Unboxed SKU & Category header */}
-              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#829477] mb-2">
-                <span>{product.sku}</span>
-                <span aria-hidden="true">·</span>
-                <span>{product.origin || 'Algérie'}</span>
-              </div>
-
               <h1 className="font-serif-botanical text-2xl sm:text-4xl font-bold text-[#244A3B] leading-tight">
                 {trans.name}
               </h1>
+
+              <a
+                href="#product-reviews"
+                className="mt-3 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#6D746E] hover:text-[#244A3B] underline underline-offset-4 decoration-[#829477] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#829477] focus-visible:ring-offset-2"
+                aria-label={`${t.product.reviewSummaryStatus} — ${t.product.reviewSummaryLink}`}
+              >
+                <span>{t.product.reviewSummaryStatus}</span>
+                <span aria-hidden="true">·</span>
+                <span>{t.product.reviewSummaryLink}</span>
+              </a>
 
               {product.botanicalName && (
                 <p className="text-sm sm:text-base text-[#6D746E] italic mt-1 font-serif">
@@ -437,6 +451,8 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
           </div>
         </div>
 
+        <ProductReviews key={product.id} productId={product.id} locale={locale} />
+
         {/* Related Products */}
         {relatedProducts.length > 0 && (
           <div className="mt-16 pt-10 border-t border-[#E3E5DF]">
@@ -456,7 +472,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({
                     }}
                     className="p-4 bg-white border border-[#E3E5DF] rounded-xs hover:border-[#244A3B] transition-all cursor-pointer flex gap-4 items-center"
                   >
-                    <div className="relative w-16 h-16 shrink-0 rounded-xs overflow-hidden border border-[#E3E5DF]">
+                    <div className="relative w-20 h-20 shrink-0 rounded-xs overflow-hidden border border-[#E3E5DF]">
                       <BotanicalIllustration tag={rel.imageTag} imageUrl={rel.imageUrl} className="w-full h-full p-1" />
                       <ProductBadgeLabel
                         value={rel.productBadge}

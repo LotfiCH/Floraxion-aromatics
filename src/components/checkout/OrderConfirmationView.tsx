@@ -2,7 +2,7 @@ import React from 'react';
 import { Locale, Order, SiteSettings } from '../../types';
 import { getDictionary } from '../../lib/i18n';
 import { formatDZD } from '../../lib/commerce';
-import { CheckCircle2, Printer, ArrowRight, Building, Truck, Clock } from 'lucide-react';
+import { Eye, Printer, ArrowRight } from 'lucide-react';
 
 interface OrderConfirmationViewProps {
   order: Order;
@@ -22,10 +22,10 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
   return (
     <div className="py-12 bg-[#F8F7F2]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Success Card Header */}
+        {/* Local preview header */}
         <div className="bg-white border border-[#E3E5DF] rounded-xs p-6 sm:p-10 shadow-xs text-center space-y-4">
           <div className="w-14 h-14 bg-[#244A3B]/10 text-[#244A3B] rounded-full flex items-center justify-center mx-auto">
-            <CheckCircle2 className="w-8 h-8" />
+            <Eye className="w-8 h-8" />
           </div>
 
           <h1 className="font-serif-botanical text-3xl sm:text-4xl font-bold text-[#244A3B]">
@@ -44,68 +44,21 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
               {new Date(order.createdAt).toLocaleDateString(locale === 'ar' ? 'ar-DZ' : 'fr-FR')}
             </span>
             <span className="bg-[#244A3B]/10 text-[#244A3B] px-3 py-1.5 rounded-xs font-semibold">
-              {order.paymentStatus === 'paid'
-                ? 'Règlement validé'
-                : 'Paiement en attente de vérification'}
+              {t.confirmation.previewOnly}
             </span>
           </div>
         </div>
 
-        {/* Payment Instructions Action Box */}
-        <div className="mt-8 bg-[#FAF8F3] border border-[#E3E5DF] rounded-xs p-6 space-y-4">
-          <div className="flex items-center gap-2 text-sm font-bold text-[#244A3B]">
-            {order.paymentMethod === 'bank_transfer' ? (
-              <Building className="w-5 h-5 text-[#244A3B]" />
-            ) : order.paymentMethod === 'cash_on_delivery' ? (
-              <Truck className="w-5 h-5 text-[#244A3B]" />
-            ) : (
-              <Clock className="w-5 h-5 text-[#244A3B]" />
-            )}
-            <span>{t.confirmation.nextStepsTitle}</span>
-          </div>
-
-          {order.paymentMethod === 'bank_transfer' && (
-            <div className="space-y-3 text-xs text-[#292D29]">
-              <p className="leading-relaxed">
-                {settings.bankTransferInstructions[locale] || settings.bankTransferInstructions.fr}
-              </p>
-              <div className="bg-white p-4 border border-[#E3E5DF] rounded-xs space-y-2 font-mono text-[11px]">
-                <div className="flex justify-between border-b border-[#E3E5DF] pb-1.5">
-                  <span className="text-[#6D746E]">Banque Nationale d’Algérie (BNA) :</span>
-                  <span className="font-bold text-[#244A3B]">{settings.ribAccount}</span>
-                </div>
-                <div className="flex justify-between border-b border-[#E3E5DF] pb-1.5">
-                  <span className="text-[#6D746E]">Compte Postal CCP :</span>
-                  <span className="font-bold text-[#244A3B]">{settings.ccpAccount}</span>
-                </div>
-                <div className="flex justify-between pt-0.5">
-                  <span className="text-[#6D746E]">Référence obligatoire à mentionner :</span>
-                  <span className="font-bold text-[#244A3B]">{order.orderNumber}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {order.paymentMethod === 'cash_on_delivery' && (
-            <p className="text-xs text-[#292D29] leading-relaxed">
-              {t.confirmation.codNextSteps} Veuillez préparer la somme exacte de{' '}
-              <strong className="text-[#244A3B] font-mono">{formatDZD(order.totalDZD, locale)}</strong>{' '}
-              en espèces pour la remise du colis.
-            </p>
-          )}
-
-          {order.paymentMethod === 'online_card' && (
-            <p className="text-xs text-[#292D29] leading-relaxed">
-              Session de paiement enregistrée en mode test bancaire. Votre commande a été transmise à notre service logistique pour validation manuelle.
-            </p>
-          )}
+        <div role="status" className="mt-8 border border-[#B68B48]/40 bg-[#B68B48]/10 p-5 text-sm leading-relaxed text-[#5B513F]">
+          <p className="font-semibold">{t.confirmation.previewTitle}</p>
+          <p className="mt-1">{t.confirmation.previewNotice}</p>
         </div>
 
         {/* Printable Order Recap */}
         <div className="mt-8 bg-white border border-[#E3E5DF] rounded-xs p-6 sm:p-8 space-y-6">
           <div className="flex items-center justify-between border-b border-[#E3E5DF] pb-4">
             <h2 className="font-serif-botanical text-xl font-bold text-[#244A3B]">
-              Détails de votre commande
+              {t.confirmation.previewDetails}
             </h2>
             <button
               onClick={() => window.print()}
@@ -199,7 +152,7 @@ export const OrderConfirmationView: React.FC<OrderConfirmationViewProps> = ({
                 </span>
               </div>
               <div className="flex justify-between pt-2 border-t border-[#E3E5DF] font-bold text-sm text-[#244A3B]">
-                <span>Total net à régler :</span>
+                <span>{t.confirmation.previewTotal}</span>
                 <span className="tabular-nums font-mono text-base">
                   {formatDZD(order.totalDZD, locale)}
                 </span>
