@@ -31,11 +31,11 @@ export const AdminTeamManagement: React.FC<{ locale: Locale }> = ({ locale }) =>
   }, []);
 
   return (
-    <section className="bg-white p-6 border border-[#E3E5DF] rounded-xs shadow-xs space-y-5" aria-labelledby="team-management-title">
-      <div className="flex items-center gap-3 border-b border-[#E3E5DF] pb-4">
+    <section className="w-full min-w-0 space-y-5 rounded-xs border border-[#E3E5DF] bg-white p-4 shadow-xs sm:p-6" aria-labelledby="team-management-title">
+      <div className="flex min-w-0 flex-col items-start gap-3 border-b border-[#E3E5DF] pb-4 sm:flex-row sm:items-center">
         <Users className="w-5 h-5 text-[#244A3B]" aria-hidden="true" />
-        <div>
-          <h2 id="team-management-title" className="font-serif-botanical text-xl font-bold text-[#244A3B]">
+        <div className="min-w-0">
+          <h2 id="team-management-title" className="break-words font-serif-botanical text-xl font-bold text-[#244A3B]">
             {isArabic ? 'إدارة الفريق' : 'Gestion de l’équipe'}
             {!isArabic && <span className="ms-2 text-sm font-sans font-medium text-[#6D746E]">(Team Management)</span>}
           </h2>
@@ -65,7 +65,12 @@ export const AdminTeamManagement: React.FC<{ locale: Locale }> = ({ locale }) =>
       )}
 
       {!error && members.length > 0 && (
-        <div className="overflow-x-auto">
+        <div
+          className="w-full min-w-0 overflow-x-auto overscroll-x-contain focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#829477]"
+          role="region"
+          aria-label={isArabic ? 'جدول أعضاء الفريق قابل للتمرير' : 'Tableau des membres de l’équipe défilant horizontalement'}
+          tabIndex={0}
+        >
           <table className="w-full min-w-[620px] text-start text-xs">
             <thead className="bg-[#FAF9F5] text-[#244A3B]">
               <tr>
